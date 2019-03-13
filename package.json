@@ -12,5 +12,8 @@
     "tslint-config-airbnb": "^5.11.1",
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.3.3333"
+  },
+  "dependencies": {
+    "get-parameter-names": "^0.3.0"
   }
 }
