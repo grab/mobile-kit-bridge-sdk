@@ -40,6 +40,34 @@ function promisifyCallback(globalObject, kitName, funcName, funcToWrap) {
  * @return {*} The wrapped kit.
  */
 export function wrapAndroidKit(globalObject, kitName, kit) {
+  const wrappedKit = getKitKeys(kit)
+    .filter(key => typeof kit[key] === "function")
+    .map(key => ({
+      /** @param {*} args The method arguments */
+      [key]: (...args) => {
+        const funcToWrap = kit[key].bind(kit, ...args);
+        return promisifyCallback(globalObject, kitName, key, funcToWrap);
+      }
+    }))
+    .reduce((acc, item) => ({ ...acc, ...item }), {});
+
+  return {
+    /**
+     * @param {string} methodName The name of the method being invoked.
+     * @param {*} args The method arguments.
+     */
+    invoke: (methodName, ...args) => wrappedKit[methodName](...args)
+  };
+}
+
+/**
+ * Wrap an iOS kit.
+ * @param {*} globalObject The global object - generally window.
+ * @param {string} kitName The name of the kit that owns the method.
+ * @param {*} kit The iOS kit being wrapped.
+ * @return {*} The wrapped kit.
+ */
+export function wrapIOSKit(globalObject, kitName, kit) {
   return getKitKeys(kit)
     .filter(key => typeof kit[key] === "function")
     .map(key => ({
@@ -48,22 +76,6 @@ export function wrapAndroidKit(globalObject, kitName, kit) {
         const funcToWrap = kit[key].bind(kit, ...args);
         return promisifyCallback(globalObject, kitName, key, funcToWrap);
       }
-    }))
-    .reduce((acc, item) => ({ ...acc, ...item }), {});
-}
-
-export function wrapIOSKit(globalObject, kit) {
-  return getKitKeys(kit)
-    .map(key => ({
-      [key]: (() => {
-        const value = kit[key];
-
-        if (typeof value === "function") {
-          return async (...args) => value.bind(kit).call(...args);
-        }
-
-        return value;
-      })()
     }))
     .reduce((acc, item) => ({ ...acc, ...item }), {});
 }

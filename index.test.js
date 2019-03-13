@@ -34,7 +34,7 @@ describe("Kit wrappers should wrap platform kits correctly", () => {
 
     // When
     const wrappedKit = wrapAndroidKit(globalObject, "TestAndroidKit", kit);
-    const result = await wrappedKit.getSomething(arg1, arg2);
+    const result = await wrappedKit.invoke("getSomething", arg1, arg2);
 
     // Then
     expect(result).toEqual(formatResult(arg1, arg2));
