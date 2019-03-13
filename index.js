@@ -53,10 +53,10 @@ export function wrapAndroidKit(globalObject, kitName, kit) {
 
   return {
     /**
-     * @param {string} methodName The name of the method being invoked.
+     * @param {string} method The name of the method being invoked.
      * @param {*} args The method arguments.
      */
-    invoke: (methodName, ...args) => wrappedKit[methodName](...args)
+    invoke: (method, ...args) => wrappedKit[method](...args)
   };
 }
 
@@ -68,18 +68,19 @@ export function wrapAndroidKit(globalObject, kitName, kit) {
  * @return {*} The wrapped kit.
  */
 export function wrapIOSKit(globalObject, kitName, kit) {
-  return getKitKeys(kit)
-    .filter(key => typeof kit[key] === "function")
-    .map(key => ({
-      /** @param {*} args */
-      [key]: (...args) => {
-        const funcToWrap = kit[key].bind(kit, ...args);
-        return promisifyCallback(globalObject, kitName, key, funcToWrap);
-      }
-    }))
-    .reduce((acc, item) => ({ ...acc, ...item }), {});
+  return {
+    /**
+     * @param {string} method The name of the method being invoked.
+     * @param {*} args The method arguments.
+     */
+    invoke: (method, ...args) => {
+      const funcToWrap = kit.postMessage.bind(kit, { ...args, method });
+      return promisifyCallback(globalObject, kitName, method, funcToWrap);
+    }
+  };
 }
 
+/** @param {string} kitName The name of the kit being wrapped */
 export function wrapKit(kitName) {
   if (!!window[kitName]) {
     const androidKit = window[kitName];

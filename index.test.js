@@ -15,8 +15,8 @@ class TestAndroidKit {
 
 function TestIOSKit() {
   return {
-    postMessage: ({ arg1, arg2, callback }) => {
-      callback(`Arg1: ${arg1}, arg2: ${arg2}`);
+    postMessage: ({ arg1, arg2 }) => {
+      globalObject.TestIOSKit_getSomethingCallback(formatResult(arg1, arg2));
     }
   };
 }
@@ -49,5 +49,19 @@ describe("Kit wrappers should wrap platform kits correctly", () => {
 
     // Then
     wrappedKit.getSomething("1", "2", console.log);
+  });
+
+  it("Should wrap IOS kit correctly", async () => {
+    // Setup
+    const kit = TestIOSKit();
+    const arg1 = "1";
+    const arg2 = "2";
+
+    // When
+    const wrappedKit = wrapIOSKit(globalObject, "TestIOSKit", kit);
+    const result = await wrappedKit.invoke("getSomething", arg1, arg2);
+
+    // Then
+    expect(result).toEqual(formatResult(arg1, arg2));
   });
 });
