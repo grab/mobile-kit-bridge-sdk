@@ -9,7 +9,7 @@ function formatResult(arg1, arg2) {
 
 class TestAndroidKit {
   async getSomething(arg1, arg2) {
-    globalObject.getSomethingCallback(formatResult(arg1, arg2));
+    globalObject.TestAndroidKit_getSomethingCallback(formatResult(arg1, arg2));
   }
 }
 
@@ -28,12 +28,12 @@ describe("Kit wrappers should wrap platform kits correctly", () => {
 
   it("Should wrap Android kit correctly", async () => {
     // Setup
-    const androidKit = new TestAndroidKit();
+    const kit = new TestAndroidKit();
     const arg1 = "1";
     const arg2 = "2";
 
     // When
-    const wrappedKit = wrapAndroidKit(globalObject, androidKit);
+    const wrappedKit = wrapAndroidKit(globalObject, "TestAndroidKit", kit);
     const result = await wrappedKit.getSomething(arg1, arg2);
 
     // Then
