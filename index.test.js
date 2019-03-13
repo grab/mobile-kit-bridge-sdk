@@ -1,9 +1,15 @@
 import "@babel/polyfill";
 import { wrapAndroidKit, wrapIOSKit } from ".";
 
+var globalObject = {};
+
+function formatResult(arg1, arg2) {
+  return `Arg1: ${arg1}, Arg2: ${arg2}`;
+}
+
 class TestAndroidKit {
-  async getSomething(arg1, arg2, callback) {
-    callback(`Arg1: ${arg1}, arg2: ${arg2}`);
+  async getSomething(arg1, arg2) {
+    globalObject.getSomethingCallback(formatResult(arg1, arg2));
   }
 }
 
@@ -16,15 +22,22 @@ function TestIOSKit() {
 }
 
 describe("Kit wrappers should wrap platform kits correctly", () => {
-  it("Should wrap Android kit correctly", () => {
+  beforeEach(() => {
+    globalObject = {};
+  });
+
+  it("Should wrap Android kit correctly", async () => {
     // Setup
     const androidKit = new TestAndroidKit();
+    const arg1 = "1";
+    const arg2 = "2";
 
     // When
-    const wrappedKit = wrapAndroidKit(androidKit);
+    const wrappedKit = wrapAndroidKit(globalObject, androidKit);
+    const result = await wrappedKit.getSomething(arg1, arg2);
 
     // Then
-    wrappedKit.getSomething("1", "2", console.log);
+    expect(result).toEqual(formatResult(arg1, arg2));
   });
 
   xit("Should wrap iOS kit correctly", () => {

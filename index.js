@@ -1,5 +1,3 @@
-import getParameterNames from "get-parameter-names";
-
 function getKitKeys(kit) {
   return [
     ...Object.keys(kit),
@@ -7,23 +5,31 @@ function getKitKeys(kit) {
   ];
 }
 
-export function wrapAndroidKit(kit) {
+function getGlobalCallbackName(funcName) {
+  return `${funcName}Callback`;
+}
+
+function promisifyCallback(globalObject, globalCallbackName, funcToWrap) {
+  return new Promise((resolve, reject) => {
+    globalObject[globalCallbackName] = arg => resolve(arg);
+    funcToWrap();
+  });
+}
+
+export function wrapAndroidKit(globalObject, kit) {
   return getKitKeys(kit)
+    .filter(key => typeof kit[key] === "function")
     .map(key => ({
-      [key]: (() => {
-        const value = kit[key];
-
-        if (typeof value === "function") {
-          return async (...args) => value.bind(kit, ...args).call();
-        }
-
-        return value;
-      })()
+      [key]: async (...args) => {
+        const globalCallbackName = getGlobalCallbackName(key);
+        const funcToWrap = kit[key].bind(kit, ...args);
+        return promisifyCallback(globalObject, globalCallbackName, funcToWrap);
+      }
     }))
     .reduce((acc, item) => ({ ...acc, ...item }), {});
 }
 
-export function wrapIOSKit(kit) {
+export function wrapIOSKit(singleton, kit) {
   return getKitKeys(kit)
     .map(key => ({
       [key]: (() => {
@@ -42,7 +48,7 @@ export function wrapIOSKit(kit) {
 export function wrapKit(kitName) {
   if (!!window[kitName]) {
     const androidKit = window[kitName];
-    const wrappedKit = wrapAndroidKit(androidKit);
+    const wrappedKit = wrapAndroidKit(window, androidKit);
     window[kitName] = wrappedKit;
   } else if (
     !!window.webkit &&
@@ -50,7 +56,7 @@ export function wrapKit(kitName) {
     !!window.webkit.messageHandlers[kitName]
   ) {
     const iOSKit = window.webkit.messageHandlers[kitName];
-    const wrappedKit = wrapIOSKit(iOSKit);
+    const wrappedKit = wrapIOSKit(window, iOSKit);
     window.webkit.messageHandlers[kitName] = wrappedKit;
   }
 }
