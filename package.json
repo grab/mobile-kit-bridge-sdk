@@ -1,0 +1,10 @@
+{
+  "name": "mobile-kit-bridge-sdk",
+  "version": "1.0.0",
+  "description": "SDK for mobile kit bridge to offer unified method signatures for Android/iOS.",
+  "main": "index.js",
+  "repository": "https://gitlab.myteksi.net/viethai.pham/mobile-kit-bridge-sdk.git",
+  "author": "Viet Hai Pham",
+  "license": "UNLICENSED",
+  "private": true
+}
