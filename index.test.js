@@ -32,7 +32,7 @@ describe("Kit wrappers should wrap platform kits correctly", () => {
 
     const result = await wrappedKit.invoke(
       "getSomething",
-      reateKitMethodParameter("arg1", arg1),
+      createKitMethodParameter("arg1", arg1),
       createKitMethodParameter("arg2", arg2)
     );
 
