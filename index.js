@@ -1,13 +1,20 @@
 import getParameterNames from "get-parameter-names";
 
-function wrapAndroidKit(kit) {
-  return Object.keys(kit)
+function getKitKeys(kit) {
+  return [
+    ...Object.keys(kit),
+    ...Object.getOwnPropertyNames(Object.getPrototypeOf(kit))
+  ];
+}
+
+export function wrapAndroidKit(kit) {
+  return getKitKeys(kit)
     .map(key => ({
       [key]: (() => {
-        const value = kitName[key];
+        const value = kit[key];
 
         if (typeof value === "function") {
-          return async (...args) => value.bind(kit).call(...args);
+          return async (...args) => value.bind(kit, ...args).call();
         }
 
         return value;
@@ -16,11 +23,11 @@ function wrapAndroidKit(kit) {
     .reduce((acc, item) => ({ ...acc, ...item }), {});
 }
 
-function wrapIOSKit(kit) {
-  return Object.keys(kit)
+export function wrapIOSKit(kit) {
+  return getKitKeys(kit)
     .map(key => ({
       [key]: (() => {
-        const value = kitName[key];
+        const value = kit[key];
 
         if (typeof value === "function") {
           return async (...args) => value.bind(kit).call(...args);
