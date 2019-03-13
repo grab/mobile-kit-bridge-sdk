@@ -1,5 +1,10 @@
 // @ts-check
 /**
+ * @typedef Parameter
+ * @property {string} paramName
+ * @property {*} paramValue
+ */
+/**
  * Get the keys of a kit.
  * @param {*} kit The kit being wrapped.
  * @return {string[]} Array of kit keys.
@@ -54,9 +59,10 @@ export function wrapAndroidKit(globalObject, kitName, kit) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {*} args The method arguments.
+     * @param {Parameter[]} args The method arguments.
      */
-    invoke: (method, ...args) => wrappedKit[method](...args)
+    invoke: (method, ...args) =>
+      wrappedKit[method](...args.map(({ paramValue }) => paramValue))
   };
 }
 
@@ -71,28 +77,48 @@ export function wrapIOSKit(globalObject, kitName, kit) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {*} args The method arguments.
+     * @param {Parameter[]} args The method arguments.
      */
     invoke: (method, ...args) => {
-      const funcToWrap = kit.postMessage.bind(kit, { ...args, method });
+      const funcToWrap = kit.postMessage.bind(kit, {
+        method,
+        ...args
+          .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
+          .reduce((acc, item) => ({ ...acc, ...item }), {})
+      });
+
       return promisifyCallback(globalObject, kitName, method, funcToWrap);
     }
   };
 }
 
-/** @param {string} kitName The name of the kit being wrapped */
-export function wrapKit(kitName) {
-  if (!!window[kitName]) {
-    const androidKit = window[kitName];
+/**
+ * Create a parameter object to work with both Android and iOS kit wrappers.
+ * @param {string} paramName The parameter name.
+ * @param {*} paramValue The parameter value.
+ * @return {Parameter} A Parameter object.
+ */
+export function createKitMethodParameter(paramName, paramValue) {
+  return { paramName, paramValue };
+}
+
+/**
+ * Wrap the appropriate kit based on whether or not it's Android/iOS.
+ * @param {*} globalObject The global object - generally window.
+ * @param {string} kitName The name of the kit being wrapped.
+ */
+export function wrapKit(globalObject, kitName) {
+  if (!!globalObject[kitName]) {
+    const androidKit = globalObject[kitName];
     const wrappedKit = wrapAndroidKit(window, kitName, androidKit);
-    window[kitName] = wrappedKit;
+    globalObject[kitName] = wrappedKit;
   } else if (
-    !!window.webkit &&
-    !!window.webkit.messageHandlers &&
-    !!window.webkit.messageHandlers[kitName]
+    !!globalObject.webkit &&
+    !!globalObject.webkit.messageHandlers &&
+    !!globalObject.webkit.messageHandlers[kitName]
   ) {
-    const iOSKit = window.webkit.messageHandlers[kitName];
-    const wrappedKit = wrapIOSKit(window, iOSKit);
-    window.webkit.messageHandlers[kitName] = wrappedKit;
+    const iOSKit = globalObject.webkit.messageHandlers[kitName];
+    const wrappedKit = wrapIOSKit(globalObject, kitName, iOSKit);
+    globalObject.webkit.messageHandlers[kitName] = wrappedKit;
   }
 }
