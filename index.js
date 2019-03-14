@@ -23,7 +23,7 @@ function getModuleKeys(module) {
  * Get the callback name that will be used to access global callback.
  * @param {string} moduleName The name of the module that owns the method.
  * @param {string} funcName The name of the method being wrapped.
- * @param {number | null} req The request ID of the callback.
+ * @param {number | string | null} req The request ID of the callback.
  * @return {string} The combined callback name.
  */
 function getCallbackName(moduleName, funcName, req) {
@@ -35,7 +35,7 @@ function getCallbackName(moduleName, funcName, req) {
  * @property {string} moduleName The name of the module that owns the method.
  * @property {string} funcName The name of the method being wrapped.
  * @property {Function} funcToWrap The method being wrapped.
- * @property {number} requestID A unique request ID that can be used to
+ * @property {string} requestID A unique request ID that can be used to
  * distinguish one request from another.
  *
  * For web bridges, native code will run a JS script that accesses a global
@@ -82,7 +82,7 @@ export function wrapAndroidModule(globalObject, moduleName, moduleObj) {
       /**
        * This is the global callback for this method. Native code will need to
        * invoke this callback in order to pass results to web.
-       * @param {*} callbackID The returned callback request ID.
+       * @param {string} callbackID The returned callback request ID.
        * @param {*} arg The returned data object.
        */
       globalObject[globalCallbackName] = (callbackID, arg) => {
@@ -94,7 +94,7 @@ export function wrapAndroidModule(globalObject, moduleName, moduleObj) {
       return {
         /** @param {*} args The method arguments */
         [key]: (...args) => {
-          const requestID = ++currentRequestID;
+          const requestID = `${++currentRequestID}`;
           const funcToWrap = moduleObj[key].bind(moduleObj, requestID, ...args);
 
           return promisifyCallback(globalObject, {
@@ -143,7 +143,7 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
         /**
          * This is the global callback for this method. Native code will need to
          * invoke this callback in order to pass results to web.
-         * @param {*} callbackID The returned callback request ID.
+         * @param {string} callbackID The returned callback request ID.
          * @param {*} arg The returned data object.
          */
         globalObject[globalCallbackName] = (callbackID, arg) => {
@@ -165,7 +165,7 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
         moduleName,
         funcName: method,
         funcToWrap,
-        requestID
+        requestID: `${requestID}`
       });
     }
   };

@@ -20,14 +20,28 @@ await window.MediaKit.invoke(
 )
 ```
 
-For the sake of standardization, **all** kit methods must invoke the relevant callback after they finish, even if they run synchronously or do not have anything meaningful to return:
+All module methods will have **requestID** as one of the parameters:
 
-```kotlin
-webView.evaluateJavascript("window.MediaKit_playDRMContentCallback()") { _ -> }
+```java
+class AnalyticsModuleBridge {
+  fun track(requestID: String, event: Any) {...}
+}
 ```
 
 ```swift
-webView.evaluateJavascript("window.MediaKit_playDRMContentCallback()", nil)
+class AnalyticsModuleBridge {
+  func track(requestID: String, event: Any) {...}
+}
+```
+
+For the sake of standardization, **all** kit methods must invoke the relevant callback after they finish, even if they run synchronously or do not have anything meaningful to return. Pass back the request ID to identify the correct sub-callback to invoke:
+
+```java
+webView.evaluateJavascript("window.MediaKit_playDRMContentCallback($requestID)") { _ -> }
+```
+
+```swift
+webView.evaluateJavascript("window.MediaKit_playDRMContentCallback(\(requestID))", nil)
 ```
 
 The name of the callback is always:
