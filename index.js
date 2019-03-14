@@ -1,42 +1,42 @@
 // @ts-check
 /**
- * @typedef KitMethodParameter
+ * @typedef ModuleMethodParameter
  * @property {string} paramName
  * @property {*} paramValue
- * @typedef KitMethodError
+ * @typedef ModuleMethodError
  * @property {string} message
  * @property {boolean} isError
  */
 /**
- * Get the keys of a kit.
- * @param {*} kit The kit being wrapped.
- * @return {string[]} Array of kit keys.
+ * Get the keys of a module.
+ * @param {*} module The module being wrapped.
+ * @return {string[]} Array of module keys.
  */
-function getKitKeys(kit) {
+function getModuleKeys(module) {
   return [
-    ...Object.keys(kit),
-    ...Object.getOwnPropertyNames(Object.getPrototypeOf(kit))
+    ...Object.keys(module),
+    ...Object.getOwnPropertyNames(Object.getPrototypeOf(module))
   ];
 }
 
 /**
  * For web bridges, native code will run a JS script that accesses a global
- * callback related to the kit's method being wrapped and pass in results so
+ * callback related to the module's method being wrapped and pass in results so
  * that partner app can access them. This function promisifies this callback to
  * support async-await/Promise.
  * @param {*} globalObject The global object - generally window.
- * @param {string} kitName The name of the kit that owns the method.
+ * @param {string} moduleName The name of the module that owns the method.
  * @param {string} funcName The name of the method being wrapped.
  * @param {Function} funcToWrap The method being wrapped.
  * @return {Promise<unknown>} Promise that handles the callback.
  */
-function promisifyCallback(globalObject, kitName, funcName, funcToWrap) {
-  const globalCallbackName = `${kitName}_${funcName}Callback`;
+function promisifyCallback(globalObject, moduleName, funcName, funcToWrap) {
+  const globalCallbackName = `${moduleName}_${funcName}Callback`;
 
   return new Promise((resolve, reject) => {
-    /** @param {* | KitMethodError} arg */
+    /** @param {* | ModuleMethodError} arg */
     globalObject[globalCallbackName] = arg => {
-      /** @type {keyof KitMethodError} */
+      /** @type {keyof ModuleMethodError} */
       const errorKey = "isError";
       !!arg[errorKey] ? reject(arg) : resolve(arg);
     };
@@ -46,20 +46,20 @@ function promisifyCallback(globalObject, kitName, funcName, funcToWrap) {
 }
 
 /**
- * Wrap an Android kit.
+ * Wrap an Android module.
  * @param {*} globalObject The global object - generally window.
- * @param {string} kitName The name of the kit that owns the method.
- * @param {*} kit The Android kit being wrapped.
- * @return {*} The wrapped kit.
+ * @param {string} moduleName The name of the module that owns the method.
+ * @param {*} module The Android module being wrapped.
+ * @return {*} The wrapped module.
  */
-export function wrapAndroidKit(globalObject, kitName, kit) {
-  const wrappedKit = getKitKeys(kit)
-    .filter(key => typeof kit[key] === "function")
+export function wrapAndroidModule(globalObject, moduleName, module) {
+  const wrappedModule = getModuleKeys(module)
+    .filter(key => typeof module[key] === "function")
     .map(key => ({
       /** @param {*} args The method arguments */
       [key]: (...args) => {
-        const funcToWrap = kit[key].bind(kit, ...args);
-        return promisifyCallback(globalObject, kitName, key, funcToWrap);
+        const funcToWrap = module[key].bind(module, ...args);
+        return promisifyCallback(globalObject, moduleName, key, funcToWrap);
       }
     }))
     .reduce((acc, item) => ({ ...acc, ...item }), {});
@@ -67,66 +67,66 @@ export function wrapAndroidKit(globalObject, kitName, kit) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {KitMethodParameter[]} args The method arguments.
+     * @param {ModuleMethodParameter[]} args The method arguments.
      */
     invoke: (method, ...args) =>
-      wrappedKit[method](...args.map(({ paramValue }) => paramValue))
+      wrappedModule[method](...args.map(({ paramValue }) => paramValue))
   };
 }
 
 /**
- * Wrap an iOS kit.
+ * Wrap an iOS module.
  * @param {*} globalObject The global object - generally window.
- * @param {string} kitName The name of the kit that owns the method.
- * @param {*} kit The iOS kit being wrapped.
- * @return {*} The wrapped kit.
+ * @param {string} moduleName The name of the module that owns the method.
+ * @param {*} module The iOS module being wrapped.
+ * @return {*} The wrapped module.
  */
-export function wrapIOSKit(globalObject, kitName, kit) {
+export function wrapIOSModule(globalObject, moduleName, module) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {KitMethodParameter[]} args The method arguments.
+     * @param {ModuleMethodParameter[]} args The method arguments.
      */
     invoke: (method, ...args) => {
-      const funcToWrap = kit.postMessage.bind(kit, {
+      const funcToWrap = module.postMessage.bind(module, {
         method,
         ...args
           .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
           .reduce((acc, item) => ({ ...acc, ...item }), {})
       });
 
-      return promisifyCallback(globalObject, kitName, method, funcToWrap);
+      return promisifyCallback(globalObject, moduleName, method, funcToWrap);
     }
   };
 }
 
 /**
- * Create a parameter object to work with both Android and iOS kit wrappers.
+ * Create a parameter object to work with both Android and iOS module wrappers.
  * @param {string} paramName The parameter name.
  * @param {*} paramValue The parameter value.
- * @return {KitMethodParameter} A Parameter object.
+ * @return {ModuleMethodParameter} A Parameter object.
  */
-export function createKitMethodParameter(paramName, paramValue) {
+export function createModuleMethodParameter(paramName, paramValue) {
   return { paramName, paramValue };
 }
 
 /**
- * Wrap the appropriate kit based on whether or not it's Android/iOS.
+ * Wrap the appropriate module based on whether or not it's Android/iOS.
  * @param {*} globalObject The global object - generally window.
- * @param {string} kitName The name of the kit being wrapped.
+ * @param {string} moduleName The name of the module being wrapped.
  */
-export function wrapKit(globalObject, kitName) {
-  if (!!globalObject[kitName]) {
-    const androidKit = globalObject[kitName];
-    const wrappedKit = wrapAndroidKit(window, kitName, androidKit);
-    globalObject[kitName] = wrappedKit;
+export function wrapModule(globalObject, moduleName) {
+  if (!!globalObject[moduleName]) {
+    const androidModule = globalObject[moduleName];
+    const wrappedModule = wrapAndroidModule(window, moduleName, androidModule);
+    globalObject[moduleName] = wrappedModule;
   } else if (
     !!globalObject.webkit &&
     !!globalObject.webkit.messageHandlers &&
-    !!globalObject.webkit.messageHandlers[kitName]
+    !!globalObject.webkit.messageHandlers[moduleName]
   ) {
-    const iOSKit = globalObject.webkit.messageHandlers[kitName];
-    const wrappedKit = wrapIOSKit(globalObject, kitName, iOSKit);
-    globalObject.webkit.messageHandlers[kitName] = wrappedKit;
+    const iOSModule = globalObject.webkit.messageHandlers[moduleName];
+    const wrappedModule = wrapIOSModule(globalObject, moduleName, iOSModule);
+    globalObject.webkit.messageHandlers[moduleName] = wrappedModule;
   }
 }

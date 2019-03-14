@@ -1,5 +1,9 @@
 import "@babel/polyfill";
-import { wrapAndroidKit, wrapIOSKit, createKitMethodParameter } from ".";
+import {
+  createModuleMethodParameter,
+  wrapAndroidModule,
+  wrapIOSModule
+} from ".";
 
 var globalObject = {};
 
@@ -11,31 +15,31 @@ function formatError(arg) {
   return `Error for arg ${arg}`;
 }
 
-class TestAndroidKit {
+class TestADRModule {
   getSomething(arg1, arg2) {
-    globalObject.TestAndroidKit_getSomethingCallback(formatResult(arg1, arg2));
+    globalObject.TestADRModule_getSomethingCallback(formatResult(arg1, arg2));
   }
 
   throwError(arg) {
-    globalObject.TestAndroidKit_throwErrorCallback({
+    globalObject.TestADRModule_throwErrorCallback({
       isError: true,
       message: formatError(arg)
     });
   }
 }
 
-function TestIOSKit() {
+function TestIOSModule() {
   return {
     postMessage: ({ method, ...rest }) => {
       switch (method) {
         case "getSomething":
           const { arg1, arg2 } = rest;
           const result = formatResult(arg1, arg2);
-          globalObject.TestIOSKit_getSomethingCallback(result);
+          globalObject.TestIOSModule_getSomethingCallback(result);
           break;
 
         case "throwError":
-          globalObject.TestIOSKit_throwErrorCallback({
+          globalObject.TestIOSModule_throwErrorCallback({
             isError: true,
             message: formatError(rest.arg)
           });
@@ -46,37 +50,37 @@ function TestIOSKit() {
   };
 }
 
-describe("Kit wrappers should wrap platform kits correctly", () => {
-  async function testKitMethodWithNormalReturn(createKitFunc) {
+describe("Module wrappers should wrap platform modules correctly", () => {
+  async function testModuleMethodWithNormalReturn(createModuleFunc) {
     // Setup
     const arg1 = "1";
     const arg2 = "2";
 
     // When
-    const wrappedKit = createKitFunc();
+    const wrappedModule = createModuleFunc();
 
-    const result = await wrappedKit.invoke(
+    const result = await wrappedModule.invoke(
       "getSomething",
-      createKitMethodParameter("arg1", arg1),
-      createKitMethodParameter("arg2", arg2)
+      createModuleMethodParameter("arg1", arg1),
+      createModuleMethodParameter("arg2", arg2)
     );
 
     // Then
     expect(result).toEqual(formatResult(arg1, arg2));
   }
 
-  async function testKitMethodWithError(createKitFunc) {
+  async function testModuleMethodWithError(createModuleFunc) {
     // Setup
     const arg = "1";
 
     // When
-    const wrappedKit = createKitFunc();
+    const wrappedModule = createModuleFunc();
 
     try {
       // Then
-      await wrappedKit.invoke(
+      await wrappedModule.invoke(
         "throwError",
-        createKitMethodParameter("arg", arg)
+        createModuleMethodParameter("arg", arg)
       );
 
       throw new Error("Never should have come here");
@@ -89,23 +93,23 @@ describe("Kit wrappers should wrap platform kits correctly", () => {
     globalObject = {};
   });
 
-  it("Should wrap Android kit correctly", async () => {
-    await testKitMethodWithNormalReturn((kitName, kit) =>
-      wrapAndroidKit(globalObject, "TestAndroidKit", new TestAndroidKit())
+  it("Should wrap Android module correctly", async () => {
+    await testModuleMethodWithNormalReturn(() =>
+      wrapAndroidModule(globalObject, "TestADRModule", new TestADRModule())
     );
 
-    await testKitMethodWithError((kitName, kit) =>
-      wrapAndroidKit(globalObject, "TestAndroidKit", new TestAndroidKit())
+    await testModuleMethodWithError(() =>
+      wrapAndroidModule(globalObject, "TestADRModule", new TestADRModule())
     );
   });
 
-  it("Should wrap iOS kit correctly", async () => {
-    await testKitMethodWithNormalReturn((kitName, kit) =>
-      wrapIOSKit(globalObject, "TestIOSKit", TestIOSKit())
+  it("Should wrap iOS module correctly", async () => {
+    await testModuleMethodWithNormalReturn(() =>
+      wrapIOSModule(globalObject, "TestIOSModule", TestIOSModule())
     );
 
-    await testKitMethodWithError((kitName, kit) =>
-      wrapIOSKit(globalObject, "TestIOSKit", TestIOSKit())
+    await testModuleMethodWithError((kitName, kit) =>
+      wrapIOSModule(globalObject, "TestIOSModule", TestIOSModule())
     );
   });
 });
