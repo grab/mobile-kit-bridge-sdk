@@ -20,24 +20,24 @@ function getModuleKeys(module) {
 }
 
 /**
+ * @typedef PromisifyParams
+ * @property {string} moduleName The name of the module that owns the method.
+ * @property {string} funcName The name of the method being wrapped.
+ * @property {Function} funcToWrap The method being wrapped.
+ * @property {number} requestID A unique request ID that can be used to
+ * distinguish one request from another.
+ *
  * For web bridges, native code will run a JS script that accesses a global
  * callback related to the module's method being wrapped and pass in results so
  * that partner app can access them. This function promisifies this callback to
  * support async-await/Promise.
  * @param {*} globalObject The global object - generally window.
- * @param {string} moduleName The name of the module that owns the method.
- * @param {string} funcName The name of the method being wrapped.
- * @param {Function} funcToWrap The method being wrapped.
- * @param {number} requestID A unique request ID that can be used to distinguish
- * one request from another.
+ * @param {PromisifyParams} arg1 Parameters for promisify.
  * @return {Promise<unknown>} Promise that handles the callback.
  */
 function promisifyCallback(
   globalObject,
-  moduleName,
-  funcName,
-  funcToWrap,
-  requestID
+  { moduleName, funcName, funcToWrap, requestID }
 ) {
   const globalCallbackName = `${moduleName}_${funcName}Callback`;
 
@@ -76,13 +76,12 @@ export function wrapAndroidModule(globalObject, moduleName, module) {
           const requestID = ++currentRequestID;
           const funcToWrap = module[key].bind(module, requestID, ...args);
 
-          return promisifyCallback(
-            globalObject,
+          return promisifyCallback(globalObject, {
             moduleName,
-            key,
+            funcName: key,
             funcToWrap,
             requestID
-          );
+          });
         }
       };
     })
@@ -126,13 +125,12 @@ export function wrapIOSModule(globalObject, moduleName, module) {
           .reduce((acc, item) => ({ ...acc, ...item }), {})
       });
 
-      return promisifyCallback(
-        globalObject,
+      return promisifyCallback(globalObject, {
         moduleName,
-        method,
+        funcName: method,
         funcToWrap,
         requestID
-      );
+      });
     }
   };
 }
