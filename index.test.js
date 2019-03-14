@@ -4,6 +4,7 @@ import {
   wrapAndroidModule,
   wrapIOSModule
 } from ".";
+import Bluebird from "bluebird";
 
 var globalObject = {};
 
@@ -85,26 +86,66 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     }
   }
 
+  async function testModuleMethodWithMultipleInvocations(createModuleFunc) {
+    // Setup
+    const rounds = 100;
+    const expected = [...Array(rounds).keys()].map(v => formatResult(v, v + 1));
+
+    // When
+    const wrappedModule = createModuleFunc();
+
+    const results = await Bluebird.map([...Array(rounds).keys()], v =>
+      wrappedModule.invoke(
+        "getSomething",
+        createModuleMethodParameter("arg1", `${v}`),
+        createModuleMethodParameter("arg2", `${v + 1}`)
+      )
+    );
+
+    // Then
+    expect(results).toEqual(expected);
+
+    expect(
+      Object.keys(globalObject).filter(key => key.indexOf("getSomething") > -1)
+    ).toHaveLength(1);
+  }
+
   beforeEach(() => {
     globalObject = {};
   });
 
-  it("Should wrap Android module correctly", async () => {
+  it("Should wrap Android method with normal return correctly", async () => {
     await testModuleMethodWithNormalReturn(() =>
       wrapAndroidModule(globalObject, "TestADRModule", new TestADRModule())
     );
+  });
 
+  it("Should wrap Android method with error return correctly", async () => {
     await testModuleMethodWithError(() =>
       wrapAndroidModule(globalObject, "TestADRModule", new TestADRModule())
     );
   });
 
-  it("Should wrap iOS module correctly", async () => {
+  it("Should correctly call Android method multiple times", async () => {
+    await testModuleMethodWithMultipleInvocations(() =>
+      wrapAndroidModule(globalObject, "TestADRModule", new TestADRModule())
+    );
+  });
+
+  it("Should wrap iOS method with normal return correctly", async () => {
     await testModuleMethodWithNormalReturn(() =>
       wrapIOSModule(globalObject, "TestIOSModule", TestIOSModule())
     );
+  });
 
+  it("Should wrap iOS method with error return correctly", async () => {
     await testModuleMethodWithError((kitName, kit) =>
+      wrapIOSModule(globalObject, "TestIOSModule", TestIOSModule())
+    );
+  });
+
+  it("Should correctly call Android method multiple times", async () => {
+    await testModuleMethodWithMultipleInvocations((kitName, kit) =>
       wrapIOSModule(globalObject, "TestIOSModule", TestIOSModule())
     );
   });
