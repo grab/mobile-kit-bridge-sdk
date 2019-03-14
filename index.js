@@ -20,6 +20,17 @@ function getModuleKeys(module) {
 }
 
 /**
+ * Get the callback name that will be used to access global callback.
+ * @param {string} moduleName The name of the module that owns the method.
+ * @param {string} funcName The name of the method being wrapped.
+ * @param {number | null} req The request ID of the callback.
+ * @return {string} The combined callback name.
+ */
+function getCallbackName(moduleName, funcName, req) {
+  return `${moduleName}_${funcName}Callback${req !== null ? `_${req}` : ""}`;
+}
+
+/**
  * @typedef PromisifyParams
  * @property {string} moduleName The name of the module that owns the method.
  * @property {string} funcName The name of the method being wrapped.
@@ -39,14 +50,11 @@ function promisifyCallback(
   globalObject,
   { moduleName, funcName, funcToWrap, requestID }
 ) {
-  const globalCallbackName = `${moduleName}_${funcName}Callback`;
+  const callbackName = getCallbackName(moduleName, funcName, requestID);
 
   return new Promise((resolve, reject) => {
-    /**
-     * @param {*} callbackID
-     * @param {* | ModuleMethodError} arg
-     */
-    globalObject[globalCallbackName] = (callbackID, arg) => {
+    /** @param {* | ModuleMethodError} arg */
+    globalObject[callbackName] = arg => {
       /** @type {keyof ModuleMethodError} */
       const errorKey = "isError";
       !!arg[errorKey] ? reject(arg) : resolve(arg);
@@ -60,21 +68,34 @@ function promisifyCallback(
  * Wrap an Android module.
  * @param {*} globalObject The global object - generally window.
  * @param {string} moduleName The name of the module that owns the method.
- * @param {*} module The Android module being wrapped.
+ * @param {*} moduleObj The Android module being wrapped.
  * @return {*} The wrapped module.
  */
-export function wrapAndroidModule(globalObject, moduleName, module) {
-  const wrappedModule = getModuleKeys(module)
-    .filter(key => typeof module[key] === "function")
+export function wrapAndroidModule(globalObject, moduleName, moduleObj) {
+  const wrappedModule = getModuleKeys(moduleObj)
+    .filter(key => typeof moduleObj[key] === "function")
     .map(key => {
       /** @type {number} */
       var currentRequestID = 0;
+      const globalCallbackName = getCallbackName(moduleName, key, null);
+
+      /**
+       * This is the global callback for this method. Native code will need to
+       * invoke this callback in order to pass results to web.
+       * @param {*} callbackID The returned callback request ID.
+       * @param {*} arg The returned data object.
+       */
+      globalObject[globalCallbackName] = (callbackID, arg) => {
+        const callbackName = getCallbackName(moduleName, key, callbackID);
+        globalObject[callbackName] && globalObject[callbackName](arg);
+        delete globalObject[callbackName];
+      };
 
       return {
         /** @param {*} args The method arguments */
         [key]: (...args) => {
           const requestID = ++currentRequestID;
-          const funcToWrap = module[key].bind(module, requestID, ...args);
+          const funcToWrap = moduleObj[key].bind(moduleObj, requestID, ...args);
 
           return promisifyCallback(globalObject, {
             moduleName,
@@ -101,10 +122,10 @@ export function wrapAndroidModule(globalObject, moduleName, module) {
  * Wrap an iOS module.
  * @param {*} globalObject The global object - generally window.
  * @param {string} moduleName The name of the module that owns the method.
- * @param {*} module The iOS module being wrapped.
+ * @param {*} moduleObj The iOS module being wrapped.
  * @return {*} The wrapped module.
  */
-export function wrapIOSModule(globalObject, moduleName, module) {
+export function wrapIOSModule(globalObject, moduleName, moduleObj) {
   /** @type {{[K: string] : number}} */
   const methodRequestIDMap = {};
 
@@ -114,10 +135,25 @@ export function wrapIOSModule(globalObject, moduleName, module) {
      * @param {ModuleMethodParameter[]} args The method arguments.
      */
     invoke: (method, ...args) => {
+      const globalCallbackName = getCallbackName(moduleName, method, null);
       const requestID = (methodRequestIDMap[method] || -1) + 1;
       methodRequestIDMap[method] = requestID;
 
-      const funcToWrap = module.postMessage.bind(module, {
+      if (!globalObject[globalCallbackName]) {
+        /**
+         * This is the global callback for this method. Native code will need to
+         * invoke this callback in order to pass results to web.
+         * @param {*} callbackID The returned callback request ID.
+         * @param {*} arg The returned data object.
+         */
+        globalObject[globalCallbackName] = (callbackID, arg) => {
+          const callbackName = getCallbackName(moduleName, method, callbackID);
+          globalObject[callbackName] && globalObject[callbackName](arg);
+          delete globalObject[callbackName];
+        };
+      }
+
+      const funcToWrap = moduleObj.postMessage.bind(moduleObj, {
         method,
         requestID,
         ...args
