@@ -16,34 +16,30 @@ function formatError(arg) {
 }
 
 class TestADRModule {
-  getSomething(arg1, arg2) {
-    globalObject.TestADRModule_getSomethingCallback(formatResult(arg1, arg2));
+  getSomething(id, arg1, arg2) {
+    const result = formatResult(arg1, arg2);
+    globalObject.TestADRModule_getSomethingCallback(id, result);
   }
 
-  throwError(arg) {
-    globalObject.TestADRModule_throwErrorCallback({
-      isError: true,
-      message: formatError(arg)
-    });
+  throwError(id, arg) {
+    const error = { isError: true, message: formatError(arg) };
+    globalObject.TestADRModule_throwErrorCallback(id, error);
   }
 }
 
 function TestIOSModule() {
   return {
-    postMessage: ({ method, ...rest }) => {
+    postMessage: ({ method, requestID, ...rest }) => {
       switch (method) {
         case "getSomething":
           const { arg1, arg2 } = rest;
           const result = formatResult(arg1, arg2);
-          globalObject.TestIOSModule_getSomethingCallback(result);
+          globalObject.TestIOSModule_getSomethingCallback(requestID, result);
           break;
 
         case "throwError":
-          globalObject.TestIOSModule_throwErrorCallback({
-            isError: true,
-            message: formatError(rest.arg)
-          });
-
+          const error = { isError: true, message: formatError(rest.arg) };
+          globalObject.TestIOSModule_throwErrorCallback(requestID, error);
           break;
       }
     }

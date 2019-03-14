@@ -28,14 +28,25 @@ function getModuleKeys(module) {
  * @param {string} moduleName The name of the module that owns the method.
  * @param {string} funcName The name of the method being wrapped.
  * @param {Function} funcToWrap The method being wrapped.
+ * @param {number} requestID A unique request ID that can be used to distinguish
+ * one request from another.
  * @return {Promise<unknown>} Promise that handles the callback.
  */
-function promisifyCallback(globalObject, moduleName, funcName, funcToWrap) {
+function promisifyCallback(
+  globalObject,
+  moduleName,
+  funcName,
+  funcToWrap,
+  requestID
+) {
   const globalCallbackName = `${moduleName}_${funcName}Callback`;
 
   return new Promise((resolve, reject) => {
-    /** @param {* | ModuleMethodError} arg */
-    globalObject[globalCallbackName] = arg => {
+    /**
+     * @param {*} callbackID
+     * @param {* | ModuleMethodError} arg
+     */
+    globalObject[globalCallbackName] = (callbackID, arg) => {
       /** @type {keyof ModuleMethodError} */
       const errorKey = "isError";
       !!arg[errorKey] ? reject(arg) : resolve(arg);
@@ -55,13 +66,26 @@ function promisifyCallback(globalObject, moduleName, funcName, funcToWrap) {
 export function wrapAndroidModule(globalObject, moduleName, module) {
   const wrappedModule = getModuleKeys(module)
     .filter(key => typeof module[key] === "function")
-    .map(key => ({
-      /** @param {*} args The method arguments */
-      [key]: (...args) => {
-        const funcToWrap = module[key].bind(module, ...args);
-        return promisifyCallback(globalObject, moduleName, key, funcToWrap);
-      }
-    }))
+    .map(key => {
+      /** @type {number} */
+      var currentRequestID = 0;
+
+      return {
+        /** @param {*} args The method arguments */
+        [key]: (...args) => {
+          const requestID = ++currentRequestID;
+          const funcToWrap = module[key].bind(module, requestID, ...args);
+
+          return promisifyCallback(
+            globalObject,
+            moduleName,
+            key,
+            funcToWrap,
+            requestID
+          );
+        }
+      };
+    })
     .reduce((acc, item) => ({ ...acc, ...item }), {});
 
   return {
@@ -82,20 +106,33 @@ export function wrapAndroidModule(globalObject, moduleName, module) {
  * @return {*} The wrapped module.
  */
 export function wrapIOSModule(globalObject, moduleName, module) {
+  /** @type {{[K: string] : number}} */
+  const methodRequestIDMap = {};
+
   return {
     /**
      * @param {string} method The name of the method being invoked.
      * @param {ModuleMethodParameter[]} args The method arguments.
      */
     invoke: (method, ...args) => {
+      const requestID = (methodRequestIDMap[method] || -1) + 1;
+      methodRequestIDMap[method] = requestID;
+
       const funcToWrap = module.postMessage.bind(module, {
         method,
+        requestID,
         ...args
           .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
           .reduce((acc, item) => ({ ...acc, ...item }), {})
       });
 
-      return promisifyCallback(globalObject, moduleName, method, funcToWrap);
+      return promisifyCallback(
+        globalObject,
+        moduleName,
+        method,
+        funcToWrap,
+        requestID
+      );
     }
   };
 }
