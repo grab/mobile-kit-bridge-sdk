@@ -1,8 +1,11 @@
 // @ts-check
 /**
- * @typedef Parameter
+ * @typedef KitMethodParameter
  * @property {string} paramName
  * @property {*} paramValue
+ * @typedef KitMethodError
+ * @property {string} message
+ * @property {boolean} isError
  */
 /**
  * Get the keys of a kit.
@@ -30,9 +33,14 @@ function getKitKeys(kit) {
 function promisifyCallback(globalObject, kitName, funcName, funcToWrap) {
   const globalCallbackName = `${kitName}_${funcName}Callback`;
 
-  return new Promise(resolve => {
-    /** @param {*} arg */
-    globalObject[globalCallbackName] = arg => resolve(arg);
+  return new Promise((resolve, reject) => {
+    /** @param {* | KitMethodError} arg */
+    globalObject[globalCallbackName] = arg => {
+      /** @type {keyof KitMethodError} */
+      const errorKey = "isError";
+      !!arg[errorKey] ? reject(arg) : resolve(arg);
+    };
+
     funcToWrap();
   });
 }
@@ -59,7 +67,7 @@ export function wrapAndroidKit(globalObject, kitName, kit) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {Parameter[]} args The method arguments.
+     * @param {KitMethodParameter[]} args The method arguments.
      */
     invoke: (method, ...args) =>
       wrappedKit[method](...args.map(({ paramValue }) => paramValue))
@@ -77,7 +85,7 @@ export function wrapIOSKit(globalObject, kitName, kit) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {Parameter[]} args The method arguments.
+     * @param {KitMethodParameter[]} args The method arguments.
      */
     invoke: (method, ...args) => {
       const funcToWrap = kit.postMessage.bind(kit, {
@@ -96,7 +104,7 @@ export function wrapIOSKit(globalObject, kitName, kit) {
  * Create a parameter object to work with both Android and iOS kit wrappers.
  * @param {string} paramName The parameter name.
  * @param {*} paramValue The parameter value.
- * @return {Parameter} A Parameter object.
+ * @return {KitMethodParameter} A Parameter object.
  */
 export function createKitMethodParameter(paramName, paramValue) {
   return { paramName, paramValue };
