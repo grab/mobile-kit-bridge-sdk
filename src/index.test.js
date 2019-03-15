@@ -19,19 +19,21 @@ function formatError(arg) {
 
 class TestADRModule {
   getSomething(requestID, arg1, arg2) {
-    globalObject.TestADRModule_getSomethingCallback(
+    globalObject.TestADRModule_getSomethingCallback({
       requestID,
-      formatResult(arg1, arg2),
-      GrabModuleResult.UNAVAILABLE
-    );
+      result: formatResult(arg1, arg2),
+      error: null,
+      status_code: 200
+    });
   }
 
   throwError(requestID, arg) {
-    globalObject.TestADRModule_throwErrorCallback(
+    globalObject.TestADRModule_throwErrorCallback({
       requestID,
-      GrabModuleResult.UNAVAILABLE,
-      { message: formatError(arg) }
-    );
+      result: null,
+      error: { message: formatError(arg) },
+      status_code: 404
+    });
   }
 }
 
@@ -40,20 +42,23 @@ function TestIOSModule() {
     postMessage: ({ method, requestID, ...rest }) => {
       switch (method) {
         case "getSomething":
-          globalObject.TestIOSModule_getSomethingCallback(
+          globalObject.TestIOSModule_getSomethingCallback({
             requestID,
-            formatResult(rest.arg1, rest.arg2),
-            GrabModuleResult.UNAVAILABLE
-          );
+            result: formatResult(rest.arg1, rest.arg2),
+            error: null,
+            status_code: 200
+          });
 
           break;
 
         case "throwError":
-          globalObject.TestIOSModule_throwErrorCallback(
+          globalObject.TestIOSModule_throwErrorCallback({
             requestID,
-            GrabModuleResult.UNAVAILABLE,
-            { message: formatError(rest.arg) }
-          );
+            result: null,
+            error: { message: formatError(rest.arg) },
+            status_code: 404
+          });
+
           break;
       }
     }
@@ -76,7 +81,11 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     );
 
     // Then
-    expect(result).toEqual(formatResult(arg1, arg2));
+    expect(result).toEqual({
+      result: formatResult(arg1, arg2),
+      error: null,
+      status_code: 200
+    });
   }
 
   async function testModuleMethodWithError(createModuleFunc) {
@@ -86,23 +95,28 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     // When
     const wrappedModule = createModuleFunc();
 
-    try {
-      // Then
-      await wrappedModule.invoke(
-        "throwError",
-        createModuleMethodParameter("arg", arg)
-      );
+    const result = await wrappedModule.invoke(
+      "throwError",
+      createModuleMethodParameter("arg", arg)
+    );
 
-      throw new Error("Never should have come here");
-    } catch (e) {
-      expect(e).toEqual({ message: formatError(arg) });
-    }
+    // Then
+    expect(result).toEqual({
+      result: null,
+      error: { message: formatError(arg) },
+      status_code: 404
+    });
   }
 
   async function testModuleMethodWithMultipleInvocations(createModuleFunc) {
     // Setup
     const rounds = 100;
-    const expected = [...Array(rounds).keys()].map(v => formatResult(v, v + 1));
+
+    const expected = [...Array(rounds).keys()].map(v => ({
+      result: formatResult(v, v + 1),
+      error: null,
+      status_code: 200
+    }));
 
     // When
     const wrappedModule = createModuleFunc();

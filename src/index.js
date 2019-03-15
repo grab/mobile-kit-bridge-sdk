@@ -1,4 +1,37 @@
 // @ts-check
+/**
+ * @typedef GetCallbackNameParams
+ * @property {string} moduleName The name of the module that owns the method.
+ * @property {string} funcName The name of the method being wrapped.
+ * @property {number | string | null} requestID The request ID of the callback.
+ *
+ * @typedef PromisifyParams
+ * @property {string} moduleName The name of the module that owns the method.
+ * @property {string} funcName The name of the method being wrapped.
+ * @property {Function} funcToWrap The method being wrapped.
+ * @property {string} requestID A unique request ID that can be used to
+ * distinguish one request from another.
+ *
+ * @typedef CallbackResult
+ * @property {*} result The result of the operation.
+ * @property {*} error The error object, if any.
+ * @property {number} status_code The status code.
+ *
+ * @typedef SetUpGlobalCallbackParams
+ * @property {string} moduleName The name of the module that owns the method.
+ * @property {string} funcName The name of the method being wrapped.
+ * @property {() => number} currentRequestIDFunc Get the current request ID.
+ *
+ * @typedef GlobalCallbackResult
+ * @property {string} requestID The request ID to access the correct callback.
+ * @property {*} result The result of the operation.
+ * @property {*} error The error object, if any.
+ * @property {number} status_code The status code.
+ *
+ * @typedef ModuleMethodParameter
+ * @property {string} paramName The name of the parameter.
+ * @property {*} paramValue The parameter value.
+ */
 export const GrabModuleResult = {
   UNAVAILABLE: "UNAVAILABLE"
 };
@@ -16,11 +49,6 @@ function getModuleKeys(module) {
 }
 
 /**
- * @typedef GetCallbackNameParams
- * @property {string} moduleName The name of the module that owns the method.
- * @property {string} funcName The name of the method being wrapped.
- * @property {number | string | null} requestID The request ID of the callback.
- *
  * Get the callback name that will be used to access global callback.
  * @param {GetCallbackNameParams} arg0 The required parameters.
  * @return {string} The combined callback name.
@@ -30,13 +58,6 @@ function getCallbackName({ moduleName, funcName, requestID: req }) {
 }
 
 /**
- * @typedef PromisifyParams
- * @property {string} moduleName The name of the module that owns the method.
- * @property {string} funcName The name of the method being wrapped.
- * @property {Function} funcToWrap The method being wrapped.
- * @property {string} requestID A unique request ID that can be used to
- * distinguish one request from another.
- *
  * For web bridges, native code will run a JS script that accesses a global
  * callback related to the module's method being wrapped and pass in results so
  * that partner app can access them. This function promisifies this callback to
@@ -48,25 +69,14 @@ function getCallbackName({ moduleName, funcName, requestID: req }) {
 function promisifyCallback(globalObject, { funcToWrap, ...rest }) {
   const callbackName = getCallbackName(rest);
 
-  return new Promise((resolve, reject) => {
-    /**
-     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
-     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
-     */
-    globalObject[callbackName] = (data, err) => {
-      err !== GrabModuleResult.UNAVAILABLE ? reject(err) : resolve(data);
-    };
-
+  return new Promise(resolve => {
+    /** @param {CallbackResult} data */
+    globalObject[callbackName] = data => resolve(data);
     funcToWrap();
   });
 }
 
 /**
- * @typedef SetUpGlobalCallbackParams
- * @property {string} moduleName The name of the module that owns the method.
- * @property {string} funcName The name of the method being wrapped.
- * @property {() => number} currentRequestIDFunc Get the current request ID.
- *
  * Set up global callback to handle multiple request IDs.
  * @param {*} globalObject The global object - generally window.
  * @param {SetUpGlobalCallbackParams} arg1 The required parameters.
@@ -78,13 +88,11 @@ function setUpGlobalCallback(globalObject, { currentRequestIDFunc, ...rest }) {
     /**
      * This is the global callback for this method. Native code will need to
      * invoke this callback in order to pass results to web.
-     * @param {string} requestID The returned callback request ID.
-     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
-     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
+     * @param {GlobalCallbackResult} arg0 The returned callback request ID.
      */
-    globalObject[globalCallbackName] = (requestID, data, err) => {
+    globalObject[globalCallbackName] = ({ requestID, ...callbackRest }) => {
       const callbackName = getCallbackName({ ...rest, requestID });
-      globalObject[callbackName] && globalObject[callbackName](data, err);
+      globalObject[callbackName] && globalObject[callbackName](callbackRest);
       delete globalObject[callbackName];
     };
   }
@@ -182,10 +190,6 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
 }
 
 /**
- * @typedef ModuleMethodParameter
- * @property {string} paramName
- * @property {*} paramValue
- *
  * Create a parameter object to work with both Android and iOS module wrappers.
  * @param {string} paramName The parameter name.
  * @param {*} paramValue The parameter value.
