@@ -4,11 +4,6 @@ export const GrabModuleResult = {
 };
 
 /**
- * @typedef ModuleMethodParameter
- * @property {string} paramName
- * @property {*} paramValue
- */
-/**
  * Get the keys of a module.
  * @param {*} module The module being wrapped.
  * @return {string[]} Array of module keys.
@@ -21,13 +16,16 @@ function getModuleKeys(module) {
 }
 
 /**
+ * @typedef GetCallbackNameParams
+ * @property {string} moduleName The name of the module that owns the method.
+ * @property {string} funcName The name of the method being wrapped.
+ * @property {number | string | null} requestID The request ID of the callback.
+ *
  * Get the callback name that will be used to access global callback.
- * @param {string} moduleName The name of the module that owns the method.
- * @param {string} funcName The name of the method being wrapped.
- * @param {number | string | null} req The request ID of the callback.
+ * @param {GetCallbackNameParams} arg0 The required parameters.
  * @return {string} The combined callback name.
  */
-function getCallbackName(moduleName, funcName, req) {
+function getCallbackName({ moduleName, funcName, requestID: req }) {
   return `${moduleName}_${funcName}Callback${req !== null ? `_${req}` : ""}`;
 }
 
@@ -47,11 +45,8 @@ function getCallbackName(moduleName, funcName, req) {
  * @param {PromisifyParams} arg1 Parameters for promisify.
  * @return {Promise<unknown>} Promise that handles the callback.
  */
-function promisifyCallback(
-  globalObject,
-  { moduleName, funcName, funcToWrap, requestID }
-) {
-  const callbackName = getCallbackName(moduleName, funcName, requestID);
+function promisifyCallback(globalObject, { funcToWrap, ...rest }) {
+  const callbackName = getCallbackName(rest);
 
   return new Promise((resolve, reject) => {
     /**
@@ -67,6 +62,35 @@ function promisifyCallback(
 }
 
 /**
+ * @typedef SetUpGlobalCallbackParams
+ * @property {string} moduleName The name of the module that owns the method.
+ * @property {string} funcName The name of the method being wrapped.
+ * @property {() => number} currentRequestIDFunc Get the current request ID.
+ *
+ * Set up global callback to handle multiple request IDs.
+ * @param {*} globalObject The global object - generally window.
+ * @param {SetUpGlobalCallbackParams} arg1 The required parameters.
+ */
+function setUpGlobalCallback(globalObject, { currentRequestIDFunc, ...rest }) {
+  const globalCallbackName = getCallbackName({ ...rest, requestID: null });
+
+  if (!globalObject[globalCallbackName]) {
+    /**
+     * This is the global callback for this method. Native code will need to
+     * invoke this callback in order to pass results to web.
+     * @param {string} requestID The returned callback request ID.
+     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
+     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
+     */
+    globalObject[globalCallbackName] = (requestID, data, err) => {
+      const callbackName = getCallbackName({ ...rest, requestID });
+      globalObject[callbackName] && globalObject[callbackName](data, err);
+      delete globalObject[callbackName];
+    };
+  }
+}
+
+/**
  * Wrap an Android module.
  * @param {*} globalObject The global object - generally window.
  * @param {string} moduleName The name of the module that owns the method.
@@ -79,20 +103,12 @@ export function wrapAndroidModule(globalObject, moduleName, moduleObj) {
     .map(key => {
       /** @type {number} */
       var currentRequestID = 0;
-      const globalCallbackName = getCallbackName(moduleName, key, null);
 
-      /**
-       * This is the global callback for this method. Native code will need to
-       * invoke this callback in order to pass results to web.
-       * @param {string} callbackID The returned callback request ID.
-       * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
-       * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
-       */
-      globalObject[globalCallbackName] = (callbackID, data, err) => {
-        const callbackName = getCallbackName(moduleName, key, callbackID);
-        globalObject[callbackName] && globalObject[callbackName](data, err);
-        delete globalObject[callbackName];
-      };
+      setUpGlobalCallback(globalObject, {
+        currentRequestIDFunc: () => currentRequestID,
+        moduleName,
+        funcName: key
+      });
 
       return {
         /** @param {*} args The method arguments */
@@ -138,24 +154,14 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
      * @param {ModuleMethodParameter[]} args The method arguments.
      */
     invoke: (method, ...args) => {
-      const globalCallbackName = getCallbackName(moduleName, method, null);
       const requestID = (methodRequestIDMap[method] || -1) + 1;
       methodRequestIDMap[method] = requestID;
 
-      if (!globalObject[globalCallbackName]) {
-        /**
-         * This is the global callback for this method. Native code will need to
-         * invoke this callback in order to pass results to web.
-         * @param {string} callbackID The returned callback request ID.
-         * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
-         * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
-         */
-        globalObject[globalCallbackName] = (callbackID, data, err) => {
-          const callbackName = getCallbackName(moduleName, method, callbackID);
-          globalObject[callbackName] && globalObject[callbackName](data, err);
-          delete globalObject[callbackName];
-        };
-      }
+      setUpGlobalCallback(globalObject, {
+        currentRequestIDFunc: () => methodRequestIDMap[method],
+        moduleName,
+        funcName: method
+      });
 
       const funcToWrap = moduleObj.postMessage.bind(moduleObj, {
         method,
@@ -176,6 +182,10 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
 }
 
 /**
+ * @typedef ModuleMethodParameter
+ * @property {string} paramName
+ * @property {*} paramValue
+ *
  * Create a parameter object to work with both Android and iOS module wrappers.
  * @param {string} paramName The parameter name.
  * @param {*} paramValue The parameter value.

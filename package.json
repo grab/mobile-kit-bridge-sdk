@@ -24,6 +24,6 @@
     "get-parameter-names": "^0.3.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest --coverage"
   }
 }
