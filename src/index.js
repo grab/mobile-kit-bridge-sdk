@@ -1,9 +1,29 @@
 // @ts-check
 /**
+ * @typedef CallbackResult
+ * @property {*} result The result of the operation.
+ * @property {*} error The error object, if any.
+ * @property {number} status_code The status code.
+ *
  * @typedef GetCallbackNameParams
  * @property {string} moduleName The name of the module that owns the method.
  * @property {string} funcName The name of the method being wrapped.
  * @property {number | string | null} requestID The request ID of the callback.
+ *
+ * @typedef GlobalCallbackResult
+ * @property {string} requestID The request ID to access the correct callback.
+ * @property {*} result The result of the operation.
+ * @property {*} error The error object, if any.
+ * @property {number} status_code The status code.
+ *
+ * @typedef IOSModuleMethodParameter
+ * @property {string} method The method name.
+ * @property {*} parameters The method parameters.
+ * @property {string} callbackName The name of the callback.
+ *
+ * @typedef ModuleMethodParameter
+ * @property {string} paramName The name of the parameter.
+ * @property {*} paramValue The parameter value.
  *
  * @typedef PromisifyParams
  * @property {string} moduleName The name of the module that owns the method.
@@ -12,29 +32,11 @@
  * @property {string} requestID A unique request ID that can be used to
  * distinguish one request from another.
  *
- * @typedef CallbackResult
- * @property {*} result The result of the operation.
- * @property {*} error The error object, if any.
- * @property {number} status_code The status code.
- *
  * @typedef SetUpGlobalCallbackParams
  * @property {string} moduleName The name of the module that owns the method.
  * @property {string} funcName The name of the method being wrapped.
  * @property {() => number} currentRequestIDFunc Get the current request ID.
- *
- * @typedef GlobalCallbackResult
- * @property {string} requestID The request ID to access the correct callback.
- * @property {*} result The result of the operation.
- * @property {*} error The error object, if any.
- * @property {number} status_code The status code.
- *
- * @typedef ModuleMethodParameter
- * @property {string} paramName The name of the parameter.
- * @property {*} paramValue The parameter value.
  */
-export const GrabModuleResult = {
-  UNAVAILABLE: "UNAVAILABLE"
-};
 
 /**
  * Get the keys of a module.
@@ -50,7 +52,7 @@ function getModuleKeys(module) {
 
 /**
  * Get the callback name that will be used to access global callback.
- * @param {GetCallbackNameParams} arg0 The required parameters.
+ * @param {GetCallbackNameParams} param0 The required parameters.
  * @return {string} The combined callback name.
  */
 function getCallbackName({ moduleName, funcName, requestID: req }) {
@@ -63,7 +65,7 @@ function getCallbackName({ moduleName, funcName, requestID: req }) {
  * that partner app can access them. This function promisifies this callback to
  * support async-await/Promise.
  * @param {*} globalObject The global object - generally window.
- * @param {PromisifyParams} arg1 Parameters for promisify.
+ * @param {PromisifyParams} param1 Parameters for promisify.
  * @return {Promise<unknown>} Promise that handles the callback.
  */
 function promisifyCallback(globalObject, { funcToWrap, ...rest }) {
@@ -79,7 +81,7 @@ function promisifyCallback(globalObject, { funcToWrap, ...rest }) {
 /**
  * Set up global callback to handle multiple request IDs.
  * @param {*} globalObject The global object - generally window.
- * @param {SetUpGlobalCallbackParams} arg1 The required parameters.
+ * @param {SetUpGlobalCallbackParams} param1 The required parameters.
  */
 function setUpGlobalCallback(globalObject, { currentRequestIDFunc, ...rest }) {
   const globalCallbackName = getCallbackName({ ...rest, requestID: null });
@@ -88,7 +90,7 @@ function setUpGlobalCallback(globalObject, { currentRequestIDFunc, ...rest }) {
     /**
      * This is the global callback for this method. Native code will need to
      * invoke this callback in order to pass results to web.
-     * @param {GlobalCallbackResult} arg0 The returned callback request ID.
+     * @param {GlobalCallbackResult} param0 The returned callback request ID.
      */
     globalObject[globalCallbackName] = ({ requestID, ...callbackRest }) => {
       const callbackName = getCallbackName({ ...rest, requestID });
@@ -119,15 +121,18 @@ export function wrapAndroidModule(globalObject, moduleName, moduleObj) {
       });
 
       return {
-        /** @param {*} args The method arguments */
-        [key]: (...args) => {
+        /** @param {*} methodParams The method parameters */
+        [key]: (...methodParams) => {
           const requestID = `${++currentRequestID}`;
-          const funcToWrap = moduleObj[key].bind(moduleObj, requestID, ...args);
 
           return promisifyCallback(globalObject, {
             moduleName,
             funcName: key,
-            funcToWrap,
+            funcToWrap: moduleObj[key].bind(
+              moduleObj,
+              requestID,
+              ...methodParams
+            ),
             requestID
           });
         }
@@ -138,10 +143,10 @@ export function wrapAndroidModule(globalObject, moduleName, moduleObj) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {ModuleMethodParameter[]} args The method arguments.
+     * @param {ModuleMethodParameter[]} methodParams The method parameters.
      */
-    invoke: (method, ...args) =>
-      wrappedModule[method](...args.map(({ paramValue }) => paramValue))
+    invoke: (method, ...methodParams) =>
+      wrappedModule[method](...methodParams.map(({ paramValue }) => paramValue))
   };
 }
 
@@ -159,9 +164,9 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
   return {
     /**
      * @param {string} method The name of the method being invoked.
-     * @param {ModuleMethodParameter[]} args The method arguments.
+     * @param {ModuleMethodParameter[]} methodParams The method parameters.
      */
-    invoke: (method, ...args) => {
+    invoke: (method, ...methodParams) => {
       const requestID = (methodRequestIDMap[method] || -1) + 1;
       methodRequestIDMap[method] = requestID;
 
@@ -171,18 +176,26 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
         funcName: method
       });
 
-      const funcToWrap = moduleObj.postMessage.bind(moduleObj, {
+      /** @type {IOSModuleMethodParameter} */
+      const nativeMethodParams = {
         method,
-        requestID,
-        ...args
-          .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
-          .reduce((acc, item) => ({ ...acc, ...item }), {})
-      });
+        parameters: {
+          ...methodParams
+            .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
+            .reduce((acc, item) => ({ ...acc, ...item }), {}),
+          requestID
+        },
+        callbackName: getCallbackName({
+          moduleName,
+          funcName: method,
+          requestID: null
+        })
+      };
 
       return promisifyCallback(globalObject, {
         moduleName,
         funcName: method,
-        funcToWrap,
+        funcToWrap: moduleObj.postMessage.bind(moduleObj, nativeMethodParams),
         requestID: `${requestID}`
       });
     }

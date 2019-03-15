@@ -27,9 +27,6 @@
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.3.3333"
   },
-  "dependencies": {
-    "get-parameter-names": "^0.3.0"
-  },
   "scripts": {
     "gulp": "gulp",
     "test": "jest --coverage"

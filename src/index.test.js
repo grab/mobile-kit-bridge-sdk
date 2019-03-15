@@ -2,36 +2,35 @@ import "@babel/polyfill";
 import {
   createModuleMethodParameter,
   wrapAndroidModule,
-  wrapIOSModule,
-  GrabModuleResult
+  wrapIOSModule
 } from ".";
 import Bluebird from "bluebird";
 
 var globalObject = {};
 
-function formatResult(arg1, arg2) {
-  return `Arg1: ${arg1}, Arg2: ${arg2}`;
+function formatResult(param1, param2) {
+  return `${param1}-${param2}`;
 }
 
-function formatError(arg) {
-  return `Error for arg ${arg}`;
+function formatError(param) {
+  return `Error: ${param}`;
 }
 
 class TestADRModule {
-  getSomething(requestID, arg1, arg2) {
+  getSomething(requestID, param1, param2) {
     globalObject.TestADRModule_getSomethingCallback({
       requestID,
-      result: formatResult(arg1, arg2),
+      result: formatResult(param1, param2),
       error: null,
       status_code: 200
     });
   }
 
-  throwError(requestID, arg) {
+  throwError(requestID, param) {
     globalObject.TestADRModule_throwErrorCallback({
       requestID,
       result: null,
-      error: { message: formatError(arg) },
+      error: { message: formatError(param) },
       status_code: 404
     });
   }
@@ -39,12 +38,16 @@ class TestADRModule {
 
 function TestIOSModule() {
   return {
-    postMessage: ({ method, requestID, ...rest }) => {
+    postMessage: ({
+      method,
+      parameters: { requestID, ...rest },
+      callbackName
+    }) => {
       switch (method) {
         case "getSomething":
-          globalObject.TestIOSModule_getSomethingCallback({
+          globalObject[callbackName]({
             requestID,
-            result: formatResult(rest.arg1, rest.arg2),
+            result: formatResult(rest.param1, rest.param2),
             error: null,
             status_code: 200
           });
@@ -52,10 +55,10 @@ function TestIOSModule() {
           break;
 
         case "throwError":
-          globalObject.TestIOSModule_throwErrorCallback({
+          globalObject[callbackName]({
             requestID,
             result: null,
-            error: { message: formatError(rest.arg) },
+            error: { message: formatError(rest.param) },
             status_code: 404
           });
 
@@ -68,21 +71,21 @@ function TestIOSModule() {
 describe("Module wrappers should wrap platform modules correctly", () => {
   async function testModuleMethodWithNormalReturn(createModuleFunc) {
     // Setup
-    const arg1 = "1";
-    const arg2 = "2";
+    const param1 = "1";
+    const param2 = "2";
 
     // When
     const wrappedModule = createModuleFunc();
 
     const result = await wrappedModule.invoke(
       "getSomething",
-      createModuleMethodParameter("arg1", arg1),
-      createModuleMethodParameter("arg2", arg2)
+      createModuleMethodParameter("param1", param1),
+      createModuleMethodParameter("param2", param2)
     );
 
     // Then
     expect(result).toEqual({
-      result: formatResult(arg1, arg2),
+      result: formatResult(param1, param2),
       error: null,
       status_code: 200
     });
@@ -90,20 +93,20 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
   async function testModuleMethodWithError(createModuleFunc) {
     // Setup
-    const arg = "1";
+    const param = "1";
 
     // When
     const wrappedModule = createModuleFunc();
 
     const result = await wrappedModule.invoke(
       "throwError",
-      createModuleMethodParameter("arg", arg)
+      createModuleMethodParameter("param", param)
     );
 
     // Then
     expect(result).toEqual({
       result: null,
-      error: { message: formatError(arg) },
+      error: { message: formatError(param) },
       status_code: 404
     });
   }
@@ -124,8 +127,8 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     const results = await Bluebird.map([...Array(rounds).keys()], v =>
       wrappedModule.invoke(
         "getSomething",
-        createModuleMethodParameter("arg1", `${v}`),
-        createModuleMethodParameter("arg2", `${v + 1}`)
+        createModuleMethodParameter("param1", `${v}`),
+        createModuleMethodParameter("param2", `${v + 1}`)
       )
     );
 
