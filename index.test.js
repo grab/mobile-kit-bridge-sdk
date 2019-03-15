@@ -2,7 +2,8 @@ import "@babel/polyfill";
 import {
   createModuleMethodParameter,
   wrapAndroidModule,
-  wrapIOSModule
+  wrapIOSModule,
+  GrabModuleResult
 } from ".";
 import Bluebird from "bluebird";
 
@@ -17,14 +18,20 @@ function formatError(arg) {
 }
 
 class TestADRModule {
-  getSomething(id, arg1, arg2) {
-    const result = formatResult(arg1, arg2);
-    globalObject.TestADRModule_getSomethingCallback(id, result);
+  getSomething(requestID, arg1, arg2) {
+    globalObject.TestADRModule_getSomethingCallback(
+      requestID,
+      formatResult(arg1, arg2),
+      GrabModuleResult.UNAVAILABLE
+    );
   }
 
-  throwError(id, arg) {
-    const error = { isError: true, message: formatError(arg) };
-    globalObject.TestADRModule_throwErrorCallback(id, error);
+  throwError(requestID, arg) {
+    globalObject.TestADRModule_throwErrorCallback(
+      requestID,
+      GrabModuleResult.UNAVAILABLE,
+      { message: formatError(arg) }
+    );
   }
 }
 
@@ -33,14 +40,20 @@ function TestIOSModule() {
     postMessage: ({ method, requestID, ...rest }) => {
       switch (method) {
         case "getSomething":
-          const { arg1, arg2 } = rest;
-          const result = formatResult(arg1, arg2);
-          globalObject.TestIOSModule_getSomethingCallback(requestID, result);
+          globalObject.TestIOSModule_getSomethingCallback(
+            requestID,
+            formatResult(rest.arg1, rest.arg2),
+            GrabModuleResult.UNAVAILABLE
+          );
+
           break;
 
         case "throwError":
-          const error = { isError: true, message: formatError(rest.arg) };
-          globalObject.TestIOSModule_throwErrorCallback(requestID, error);
+          globalObject.TestIOSModule_throwErrorCallback(
+            requestID,
+            GrabModuleResult.UNAVAILABLE,
+            { message: formatError(rest.arg) }
+          );
           break;
       }
     }
@@ -82,7 +95,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
       throw new Error("Never should have come here");
     } catch (e) {
-      expect(e).toEqual({ isError: true, message: formatError(arg) });
+      expect(e).toEqual({ message: formatError(arg) });
     }
   }
 

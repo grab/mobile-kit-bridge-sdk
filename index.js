@@ -1,11 +1,12 @@
 // @ts-check
+export const GrabModuleResult = {
+  UNAVAILABLE: "UNAVAILABLE"
+};
+
 /**
  * @typedef ModuleMethodParameter
  * @property {string} paramName
  * @property {*} paramValue
- * @typedef ModuleMethodError
- * @property {string} message
- * @property {boolean} isError
  */
 /**
  * Get the keys of a module.
@@ -53,11 +54,12 @@ function promisifyCallback(
   const callbackName = getCallbackName(moduleName, funcName, requestID);
 
   return new Promise((resolve, reject) => {
-    /** @param {* | ModuleMethodError} arg */
-    globalObject[callbackName] = arg => {
-      /** @type {keyof ModuleMethodError} */
-      const errorKey = "isError";
-      !!arg[errorKey] ? reject(arg) : resolve(arg);
+    /**
+     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
+     * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
+     */
+    globalObject[callbackName] = (data, err) => {
+      err !== GrabModuleResult.UNAVAILABLE ? reject(err) : resolve(data);
     };
 
     funcToWrap();
@@ -83,11 +85,12 @@ export function wrapAndroidModule(globalObject, moduleName, moduleObj) {
        * This is the global callback for this method. Native code will need to
        * invoke this callback in order to pass results to web.
        * @param {string} callbackID The returned callback request ID.
-       * @param {*} arg The returned data object.
+       * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
+       * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
        */
-      globalObject[globalCallbackName] = (callbackID, arg) => {
+      globalObject[globalCallbackName] = (callbackID, data, err) => {
         const callbackName = getCallbackName(moduleName, key, callbackID);
-        globalObject[callbackName] && globalObject[callbackName](arg);
+        globalObject[callbackName] && globalObject[callbackName](data, err);
         delete globalObject[callbackName];
       };
 
@@ -144,11 +147,12 @@ export function wrapIOSModule(globalObject, moduleName, moduleObj) {
          * This is the global callback for this method. Native code will need to
          * invoke this callback in order to pass results to web.
          * @param {string} callbackID The returned callback request ID.
-         * @param {*} arg The returned data object.
+         * @param {* | typeof GrabModuleResult['UNAVAILABLE']} data
+         * @param {* | typeof GrabModuleResult['UNAVAILABLE']} err
          */
-        globalObject[globalCallbackName] = (callbackID, arg) => {
+        globalObject[globalCallbackName] = (callbackID, data, err) => {
           const callbackName = getCallbackName(moduleName, method, callbackID);
-          globalObject[callbackName] && globalObject[callbackName](arg);
+          globalObject[callbackName] && globalObject[callbackName](data, err);
           delete globalObject[callbackName];
         };
       }

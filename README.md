@@ -37,11 +37,11 @@ class AnalyticsModuleBridge {
 For the sake of standardization, **all** kit methods must invoke the relevant callback after they finish, even if they run synchronously or do not have anything meaningful to return. Pass back the request ID to identify the correct sub-callback to invoke:
 
 ```java
-webView.evaluateJavascript("window.MediaKit_playDRMContentCallback($requestID)") { _ -> }
+webView.evaluateJavascript("window.MediaKit_playDRMContentCallback(\"$requestID\", \"UNAVAILABLE\")") { _ -> }
 ```
 
 ```swift
-webView.evaluateJavascript("window.MediaKit_playDRMContentCallback(\(requestID))", nil)
+webView.evaluateJavascript("window.MediaKit_playDRMContentCallback(\"\(requestID))\", \"UNAVAILABLE\"", nil)
 ```
 
 The name of the callback is always:
