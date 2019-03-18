@@ -1,0 +1,6 @@
+coverage/
+src/
+*babel*
+*gulp*
+*ts*
+*yarn*
