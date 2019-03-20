@@ -167,7 +167,7 @@ function setUpGlobalCallback(
     /**
      * This is the global callback for this method. Native code will need to
      * invoke this callback in order to pass results to web.
-     * @param {GlobalCallbackResult} param0 The returned callback request ID.
+     * @param param0 The returned callback request ID.
      */
     globalObject[globalCallbackName] = ({
       requestID,

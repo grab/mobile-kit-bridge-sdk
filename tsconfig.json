@@ -2,9 +2,8 @@
   "compilerOptions": {
     "target": "es2015",
     "module": "commonjs",
-    "allowJs": true,
-    "checkJs": false,
     "outDir": "dist",
+    "declaration": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
