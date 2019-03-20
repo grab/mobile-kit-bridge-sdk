@@ -39,12 +39,14 @@ gulp.task(
 
 const distSequence = ["clean:dist", "ts:bundle", "ts:bundle:umd"];
 
+gulp.task("ts:distribution", gulp.series(...distSequence));
+
 gulp.task("watch:src", function() {
   gulp.watch(
     [...srcPaths.src, ...srcPaths.config],
-    gulp.series(...distSequence)
+    gulp.series("ts:distribution")
   );
 });
 
 gulp.task("watch", gulp.parallel("watch:src"));
-gulp.task("default", gulp.parallel("watch", gulp.series(...distSequence)));
+gulp.task("default", gulp.parallel("watch", "ts:distribution"));

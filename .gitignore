@@ -83,3 +83,4 @@ typings/
 dist
 .DS_STORE
 .rpt2*
+.npmrc
