@@ -43,7 +43,7 @@ function createTestIOSModule() {
       method,
       parameters: { requestID, ...rest },
       callbackName
-    }: IOSMethodParameter) => {
+    }: IOSMethodParameter<'getSomething' | 'throwError'>) => {
       switch (method) {
         case 'getSomething':
           globalObject[callbackName]({

@@ -57,9 +57,9 @@ type SetUpGlobalCallbackParams = Readonly<{
 }>;
 
 /** Method parameters for iOS. */
-export type IOSMethodParameter = Readonly<{
+export type IOSMethodParameter<MethodKeys extends string> = Readonly<{
   /** The method name. */
-  method: string;
+  method: MethodKeys;
 
   /** The method parameters. */
   parameters: Readonly<{ requestID: string | number; [K: string]: unknown }>;
@@ -78,24 +78,32 @@ export type WrappedMethodParameter = Readonly<{
 }>;
 
 /** Represents an Android module. */
-export interface AndroidModule {
-  [K: string]: (...args: any[]) => unknown;
-}
+type AndroidModule = Readonly<{
+  [K: string]: (...params: any[]) => unknown;
+}>;
 
 /**
  * Represents a wrapped Android module. Each method in the original module is
  * mapped to a method key along with its actual parameters.
  */
-export type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
+type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
   invoke: <MethodKey extends StringKeys<Original>>(
     method: MethodKey,
     ...params: WrappedMethodParameter[]
   ) => PromiseLike<ReturnType<Original[MethodKey]>>;
 }>;
 
-/** Represents an iOS module */
-export type IOSModule = Readonly<{
-  postMessage: (params: IOSMethodParameter) => unknown;
+/** Represents an iOS module. */
+type IOSModule<MethodKeys extends string> = Readonly<{
+  postMessage: (params: IOSMethodParameter<MethodKeys>) => unknown;
+}>;
+
+/** Represents a wrapped IOS module. */
+type WrappedIOSModule<MethodKeys extends string> = Readonly<{
+  invoke: <MethodKey extends MethodKeys>(
+    method: MethodKey,
+    ...params: WrappedMethodParameter[]
+  ) => PromiseLike<unknown>;
 }>;
 
 /**
@@ -216,10 +224,6 @@ export function wrapAndroidModule<Module extends AndroidModule>(
     .reduce((acc, item) => ({ ...acc, ...item }), {});
 
   return {
-    /**
-     * @param method The name of the method being invoked.
-     * @param methodParams The method parameters.
-     */
     invoke: <MethodKey extends StringKeys<Module>>(
       method: MethodKey,
       ...methodParams: WrappedMethodParameter[]
@@ -235,19 +239,18 @@ export function wrapAndroidModule<Module extends AndroidModule>(
  * @param moduleObj The iOS module being wrapped.
  * @return The wrapped module.
  */
-export function wrapIOSModule(
+export function wrapIOSModule<MethodKeys extends string>(
   globalObject: any,
   moduleName: string,
-  moduleObj: IOSModule
-): any {
+  moduleObj: IOSModule<MethodKeys>
+): WrappedIOSModule<MethodKeys> {
   const methodRequestIDMap: { [K: string]: number } = {};
 
   return {
-    /**
-     * @param method The name of the method being invoked.
-     * @param methodParams The method parameters.
-     */
-    invoke: (method: string, ...methodParams: WrappedMethodParameter[]) => {
+    invoke: <MethodKey extends MethodKeys>(
+      method: MethodKey,
+      ...methodParams: WrappedMethodParameter[]
+    ) => {
       const requestID = (methodRequestIDMap[method] || -1) + 1;
       methodRequestIDMap[method] = requestID;
 
@@ -257,8 +260,7 @@ export function wrapIOSModule(
         funcName: method
       });
 
-      /** @type {IOSMethodParameter} */
-      const nativeMethodParams = {
+      const nativeMethodParams: IOSMethodParameter<MethodKeys> = {
         method,
         parameters: {
           ...methodParams
