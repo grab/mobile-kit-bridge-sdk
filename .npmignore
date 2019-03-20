@@ -1,5 +1,7 @@
 coverage/
 src/
+dist/index.js
+dist/*.umd.*
 **/index.html
 .rpt2*
 tslint*
