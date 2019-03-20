@@ -1,7 +1,7 @@
 import bluebird from 'bluebird';
 import {
-  createModuleMethodParameter,
-  IOSModule,
+  createMethodParameter,
+  IOSMethodParameter,
   wrapAndroidModule,
   wrapIOSModule
 } from './index';
@@ -16,33 +16,34 @@ function formatError(param: unknown) {
   return `Error: ${param}`;
 }
 
-class TestADRModule {
-  getSomething(requestID: string, param1: string, param2: string) {
-    globalObject.TestADRModule_getSomethingCallback({
-      requestID,
-      result: formatResult(param1, param2),
-      error: null,
-      status_code: 200
-    });
-  }
-
-  throwError(requestID: string, param: string) {
-    globalObject.TestADRModule_throwErrorCallback({
-      requestID,
-      result: null,
-      error: { message: formatError(param) },
-      status_code: 404
-    });
-  }
+function createTestADRModule() {
+  return {
+    getSomething(requestID: string, param1: string, param2: string) {
+      globalObject.TestADRModule_getSomethingCallback({
+        requestID,
+        result: formatResult(param1, param2),
+        error: null,
+        status_code: 200
+      });
+    },
+    throwError(requestID: string, param: string) {
+      globalObject.TestADRModule_throwErrorCallback({
+        requestID,
+        result: null,
+        error: { message: formatError(param) },
+        status_code: 404
+      });
+    }
+  };
 }
 
-function TestIOSModule(): IOSModule {
+function createTestIOSModule() {
   return {
     postMessage: ({
       method,
       parameters: { requestID, ...rest },
       callbackName
-    }) => {
+    }: IOSMethodParameter) => {
       switch (method) {
         case 'getSomething':
           globalObject[callbackName]({
@@ -69,18 +70,16 @@ function TestIOSModule(): IOSModule {
 }
 
 describe('Module wrappers should wrap platform modules correctly', () => {
-  async function testModuleMethodWithNormalReturn(createModuleFunc: () => any) {
+  async function testModuleMethodWithNormalReturn(wrappedModule: any) {
     // Setup
     const param1 = '1';
     const param2 = '2';
 
     // When
-    const wrappedModule = createModuleFunc();
-
     const result = await wrappedModule.invoke(
       'getSomething',
-      createModuleMethodParameter('param1', param1),
-      createModuleMethodParameter('param2', param2)
+      createMethodParameter('param1', param1),
+      createMethodParameter('param2', param2)
     );
 
     // Then
@@ -91,16 +90,14 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     });
   }
 
-  async function testModuleMethodWithError(createModuleFunc: () => any) {
+  async function testModuleMethodWithError(wrappedModule: any) {
     // Setup
     const param = '1';
 
     // When
-    const wrappedModule = createModuleFunc();
-
     const result = await wrappedModule.invoke(
       'throwError',
-      createModuleMethodParameter('param', param)
+      createMethodParameter('param', param)
     );
 
     // Then
@@ -111,9 +108,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     });
   }
 
-  async function testModuleMethodWithMultipleInvocations(
-    createModuleFunc: () => any
-  ) {
+  async function testModuleMethodWithMultipleInvocations(wrappedModule: any) {
     // Setup
     const rounds = 100;
 
@@ -124,13 +119,11 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     }));
 
     // When
-    const wrappedModule = createModuleFunc();
-
     const results = await bluebird.map([...Array(rounds).keys()], v =>
       wrappedModule.invoke(
         'getSomething',
-        createModuleMethodParameter('param1', `${v}`),
-        createModuleMethodParameter('param2', `${v + 1}`)
+        createMethodParameter('param1', `${v}`),
+        createMethodParameter('param2', `${v + 1}`)
       )
     );
 
@@ -147,38 +140,38 @@ describe('Module wrappers should wrap platform modules correctly', () => {
   });
 
   it('Should wrap Android method with normal return correctly', async () => {
-    await testModuleMethodWithNormalReturn(() =>
-      wrapAndroidModule(globalObject, 'TestADRModule', new TestADRModule())
-    );
+    const adr = createTestADRModule();
+    const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
+    await testModuleMethodWithNormalReturn(wrapped);
   });
 
   it('Should wrap Android method with error return correctly', async () => {
-    await testModuleMethodWithError(() =>
-      wrapAndroidModule(globalObject, 'TestADRModule', new TestADRModule())
-    );
+    const adr = createTestADRModule();
+    const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
+    await testModuleMethodWithError(wrapped);
   });
 
   it('Should correctly call Android method multiple times', async () => {
-    await testModuleMethodWithMultipleInvocations(() =>
-      wrapAndroidModule(globalObject, 'TestADRModule', new TestADRModule())
-    );
+    const adr = createTestADRModule();
+    const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
+    await testModuleMethodWithMultipleInvocations(wrapped);
   });
 
   it('Should wrap iOS method with normal return correctly', async () => {
-    await testModuleMethodWithNormalReturn(() =>
-      wrapIOSModule(globalObject, 'TestIOSModule', TestIOSModule())
-    );
+    const ios = createTestIOSModule();
+    const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
+    await testModuleMethodWithNormalReturn(wrapped);
   });
 
   it('Should wrap iOS method with error return correctly', async () => {
-    await testModuleMethodWithError(() =>
-      wrapIOSModule(globalObject, 'TestIOSModule', TestIOSModule())
-    );
+    const ios = createTestIOSModule();
+    const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
+    await testModuleMethodWithError(wrapped);
   });
 
   it('Should correctly call Android method multiple times', async () => {
-    await testModuleMethodWithMultipleInvocations(() =>
-      wrapIOSModule(globalObject, 'TestIOSModule', TestIOSModule())
-    );
+    const ios = createTestIOSModule();
+    const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
+    await testModuleMethodWithMultipleInvocations(wrapped);
   });
 });

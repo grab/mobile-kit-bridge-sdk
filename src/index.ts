@@ -1,3 +1,5 @@
+type StringKeys<T> = Extract<keyof T, string>;
+
 type CallbackResult = Readonly<{
   /** The result of the operation. */
   result: unknown;
@@ -54,13 +56,8 @@ type SetUpGlobalCallbackParams = Readonly<{
   currentRequestIDFunc: () => number;
 }>;
 
-/** Represents an iOS module */
-export type IOSModule = Readonly<{
-  postMessage: (params: IOSModuleMethodParameter) => unknown;
-}>;
-
 /** Method parameters for iOS. */
-export type IOSModuleMethodParameter = Readonly<{
+export type IOSMethodParameter = Readonly<{
   /** The method name. */
   method: string;
 
@@ -72,12 +69,33 @@ export type IOSModuleMethodParameter = Readonly<{
 }>;
 
 /** Method parameters for cross-platform usage. */
-export type ModuleMethodParameter = Readonly<{
+export type WrappedMethodParameter = Readonly<{
   /** The name of the parameter. */
   paramName: string;
 
   /** The parameter value. */
   paramValue: unknown;
+}>;
+
+/** Represents an Android module. */
+export interface AndroidModule {
+  [K: string]: (...args: any[]) => unknown;
+}
+
+/**
+ * Represents a wrapped Android module. Each method in the original module is
+ * mapped to a method key along with its actual parameters.
+ */
+export type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
+  invoke: <MethodKey extends StringKeys<Original>>(
+    method: MethodKey,
+    ...params: WrappedMethodParameter[]
+  ) => PromiseLike<ReturnType<Original[MethodKey]>>;
+}>;
+
+/** Represents an iOS module */
+export type IOSModule = Readonly<{
+  postMessage: (params: IOSMethodParameter) => unknown;
 }>;
 
 /**
@@ -117,7 +135,7 @@ function getCallbackName({
 function promisifyCallback(
   globalObject: any,
   { funcToWrap, ...rest }: PromisifyParams
-): PromiseLike<unknown> {
+): PromiseLike<any> {
   const callbackName = getCallbackName(rest);
 
   return new Promise(resolve => {
@@ -161,11 +179,11 @@ function setUpGlobalCallback(
  * @param moduleObj The Android module being wrapped.
  * @return The wrapped module.
  */
-export function wrapAndroidModule<Module extends { [K: string]: any }>(
+export function wrapAndroidModule<Module extends AndroidModule>(
   globalObject: any,
   moduleName: string,
   moduleObj: Module
-): any {
+): WrappedAndroidModule<Module> {
   const wrappedModule = getModuleKeys(moduleObj)
     .filter(key => typeof moduleObj[key] === 'function')
     .map((key: keyof Module & string) => {
@@ -202,7 +220,10 @@ export function wrapAndroidModule<Module extends { [K: string]: any }>(
      * @param method The name of the method being invoked.
      * @param methodParams The method parameters.
      */
-    invoke: (method: string, ...methodParams: ModuleMethodParameter[]) =>
+    invoke: <MethodKey extends StringKeys<Module>>(
+      method: MethodKey,
+      ...methodParams: WrappedMethodParameter[]
+    ) =>
       wrappedModule[method](...methodParams.map(({ paramValue }) => paramValue))
   };
 }
@@ -226,7 +247,7 @@ export function wrapIOSModule(
      * @param method The name of the method being invoked.
      * @param methodParams The method parameters.
      */
-    invoke: (method: string, ...methodParams: ModuleMethodParameter[]) => {
+    invoke: (method: string, ...methodParams: WrappedMethodParameter[]) => {
       const requestID = (methodRequestIDMap[method] || -1) + 1;
       methodRequestIDMap[method] = requestID;
 
@@ -236,7 +257,7 @@ export function wrapIOSModule(
         funcName: method
       });
 
-      /** @type {IOSModuleMethodParameter} */
+      /** @type {IOSMethodParameter} */
       const nativeMethodParams = {
         method,
         parameters: {
@@ -268,10 +289,10 @@ export function wrapIOSModule(
  * @param paramValue The parameter value.
  * @return A Parameter object.
  */
-export function createModuleMethodParameter(
-  paramName: ModuleMethodParameter['paramName'],
-  paramValue: ModuleMethodParameter['paramValue']
-): ModuleMethodParameter {
+export function createMethodParameter(
+  paramName: WrappedMethodParameter['paramName'],
+  paramValue: WrappedMethodParameter['paramValue']
+): WrappedMethodParameter {
   return { paramName, paramValue };
 }
 
