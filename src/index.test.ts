@@ -4,7 +4,7 @@ import {
   IOSModule,
   wrapAndroidModule,
   wrapIOSModule
-} from '.';
+} from './index';
 
 let globalObject: any = {};
 
