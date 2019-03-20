@@ -1,25 +1,30 @@
+// @ts-check
 const gulp = require("gulp");
-const merge2 = require("merge2");
-const obfuscator = require("gulp-javascript-obfuscator");
-const ts = require("gulp-typescript");
-const uglify = require("gulp-uglify");
+const bundle = require("@lernetz/gulp-typescript-bundle");
 
-const tsProject = ts.createProject("tsconfig.json");
-
-const paths = {
-  src: ["src/**/*", "!**/*.test.*"],
-  dist: "dist"
+const srcPaths = {
+  config: ["tsconfig.json"],
+  src: ["src/**/*", "!**/*.test.*"]
 };
 
-gulp.task("js:dist", async function() {
-  const tsStream = gulp.src(paths.src).pipe(tsProject());
-  const jsStream = tsStream.js.pipe(uglify().pipe(obfuscator()));
-  merge2(jsStream, tsStream.dts).pipe(gulp.dest(paths.dist));
+gulp.task(
+  "ts:bundle",
+  bundle({
+    dest: "dist",
+    src: "src/index.ts",
+    name: "index",
+    rollup: { outputOptions: { sourcemap: false } }
+  })
+);
+
+const distSequence = ["ts:bundle"];
+
+gulp.task("watch:src", function() {
+  gulp.watch(
+    [...srcPaths.src, ...srcPaths.config],
+    gulp.series(...distSequence)
+  );
 });
 
-gulp.task("watch:js", function() {
-  gulp.watch(paths.src, gulp.series("js:dist"));
-});
-
-gulp.task("watch", gulp.parallel("watch:js"));
-gulp.task("default", gulp.parallel("watch", "js:dist"));
+gulp.task("watch", gulp.parallel("watch:src"));
+gulp.task("default", gulp.parallel("watch", gulp.series(...distSequence)));

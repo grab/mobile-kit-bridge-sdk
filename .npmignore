@@ -1,6 +1,9 @@
 coverage/
 src/
+**/index.html
+.rpt2*
+tslint*
 *babel*
+*jest*
 *gulp*
-*ts*
 *yarn*
