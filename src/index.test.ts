@@ -18,8 +18,13 @@ function formatError(param: unknown) {
 
 function createTestADRModule() {
   return {
-    getSomething(requestID: string, param1: string, param2: string) {
-      globalObject.TestADRModule_getSomethingCallback({
+    getSomething(
+      requestID: string,
+      param1: string,
+      param2: string,
+      callbackName: string
+    ) {
+      globalObject[callbackName]({
         requestID,
         result: formatResult(param1, param2),
         error: null,

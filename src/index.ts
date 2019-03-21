@@ -46,14 +46,8 @@ type PromisifyParams = Readonly<{
 }>;
 
 type SetUpGlobalCallbackParams = Readonly<{
-  /** The name of the module that owns the method. */
-  moduleName: string;
-
-  /** The name of the method being wrapped. */
-  funcName: string;
-
-  /** Get the current request ID. */
-  currentRequestIDFunc: () => number;
+  /** Get the name of the relevant callback. */
+  callbackNameFunc: (requestID: number | string | null) => string;
 }>;
 
 /** Method parameters for iOS. */
@@ -159,9 +153,9 @@ function promisifyCallback(
  */
 function setUpGlobalCallback(
   globalObject: any,
-  { currentRequestIDFunc, ...rest }: SetUpGlobalCallbackParams
+  { callbackNameFunc }: SetUpGlobalCallbackParams
 ) {
-  const globalCallbackName = getCallbackName({ ...rest, requestID: null });
+  const globalCallbackName = callbackNameFunc(null);
 
   if (!globalObject[globalCallbackName]) {
     /**
@@ -173,7 +167,7 @@ function setUpGlobalCallback(
       requestID,
       ...callbackRest
     }: GlobalCallbackResult) => {
-      const callbackName = getCallbackName({ ...rest, requestID });
+      const callbackName = callbackNameFunc(requestID);
       globalObject[callbackName] && globalObject[callbackName](callbackRest);
       delete globalObject[callbackName];
     };
@@ -197,11 +191,10 @@ export function wrapAndroidModule<Module extends AndroidModule>(
     .map((key: keyof Module & string) => {
       let currentRequestID = 0;
 
-      setUpGlobalCallback(globalObject, {
-        moduleName,
-        currentRequestIDFunc: () => currentRequestID,
-        funcName: key
-      });
+      const callbackNameFunc = (requestID: number | string | null) =>
+        getCallbackName({ moduleName, requestID, funcName: key });
+
+      setUpGlobalCallback(globalObject, { callbackNameFunc });
 
       return {
         [key]: (...methodParams: any[]) => {
@@ -215,7 +208,8 @@ export function wrapAndroidModule<Module extends AndroidModule>(
             funcToWrap: moduleObj[key].bind(
               moduleObj,
               requestID,
-              ...methodParams
+              ...methodParams,
+              callbackNameFunc(null)
             )
           });
         }
@@ -254,11 +248,10 @@ export function wrapIOSModule<MethodKeys extends string>(
       const requestID = (methodRequestIDMap[method] || -1) + 1;
       methodRequestIDMap[method] = requestID;
 
-      setUpGlobalCallback(globalObject, {
-        moduleName,
-        currentRequestIDFunc: () => methodRequestIDMap[method],
-        funcName: method
-      });
+      const callbackNameFunc = (requestID: number | string | null) =>
+        getCallbackName({ moduleName, requestID, funcName: method });
+
+      setUpGlobalCallback(globalObject, { callbackNameFunc });
 
       const nativeMethodParams: IOSMethodParameter<MethodKeys> = {
         method,
@@ -268,11 +261,7 @@ export function wrapIOSModule<MethodKeys extends string>(
             .reduce((acc, item) => ({ ...acc, ...item }), {}),
           requestID
         },
-        callbackName: getCallbackName({
-          moduleName,
-          funcName: method,
-          requestID: null
-        })
+        callbackName: callbackNameFunc(null)
       };
 
       return promisifyCallback(globalObject, {
