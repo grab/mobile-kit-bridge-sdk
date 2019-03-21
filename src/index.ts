@@ -315,6 +315,6 @@ export function wrapModule(globalObject: any, moduleName: string) {
   ) {
     const iOSModule = globalObject.webkit.messageHandlers[moduleName];
     const wrappedModule = wrapIOSModule(globalObject, moduleName, iOSModule);
-    globalObject.webkit.messageHandlers[moduleName] = wrappedModule;
+    globalObject[moduleName] = wrappedModule;
   }
 }
