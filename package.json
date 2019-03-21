@@ -4,6 +4,7 @@
   "description": "SDK for mobile kit bridge to offer unified method signatures for Android/iOS.",
   "main": "dist/index.min.js",
   "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
   "repository": "https://gitlab.myteksi.net/viethai.pham/mobile-kit-bridge-sdk.git",
   "author": "Viet Hai Pham",
   "license": "UNLICENSED",
