@@ -19,6 +19,7 @@
     "jest": "^24.5.0",
     "prettier-tslint": "^0.4.2",
     "rollup": "^1.7.0",
+    "ts-essentials": "^2.0.3",
     "ts-jest": "^24.0.0",
     "ts-lint": "^4.5.1",
     "tslint-config-airbnb": "^5.11.1",
@@ -31,6 +32,6 @@
     "prepublishOnly": "gulp ts:distribution"
   },
   "publishConfig": {
-    "@viethai.pham:registry":"https://gitlab.myteksi.net/api/v4/projects/2044/packages/npm/"
+    "@viethai.pham:registry": "https://gitlab.myteksi.net/api/v4/projects/2044/packages/npm/"
   }
 }
