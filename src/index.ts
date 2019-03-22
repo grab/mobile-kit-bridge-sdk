@@ -1,6 +1,5 @@
 import { WrappedMethodParameter } from './common';
-import setupGlobal from './setup-global';
-import simplifyCallback from './simplify-callback';
+import { setupGlobalCallback, simplifyCallback } from './simplify-callback';
 import { getCallbackName, getModuleKeys } from './utils';
 
 type StringKeys<T> = Extract<keyof T, string>;
@@ -66,7 +65,7 @@ export function wrapAndroidModule<Module extends AndroidModule>(
       const callbackNameFunc = (requestID: number | string | null) =>
         getCallbackName({ moduleName, requestID, funcName: key });
 
-      setupGlobal(globalObject, { callbackNameFunc });
+      setupGlobalCallback(globalObject, { callbackNameFunc });
 
       return {
         [key]: (...methodParams: any[]) => {
@@ -122,7 +121,7 @@ export function wrapIOSModule<MethodKeys extends string>(
       const callbackNameFunc = (requestID: number | string | null) =>
         getCallbackName({ moduleName, requestID, funcName: method });
 
-      setupGlobal(globalObject, { callbackNameFunc });
+      setupGlobalCallback(globalObject, { callbackNameFunc });
 
       const nativeMethodParams: IOSMethodParameter<MethodKeys> = {
         method,
