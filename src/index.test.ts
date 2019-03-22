@@ -1,10 +1,6 @@
 import bluebird from 'bluebird';
-import {
-  createMethodParameter,
-  IOSMethodParameter,
-  wrapAndroidModule,
-  wrapIOSModule
-} from './index';
+import { IOSMethodParameter, wrapAndroidModule, wrapIOSModule } from './index';
+import { createMethodParameter } from './utils';
 
 let globalObject: any = {};
 

@@ -17,7 +17,6 @@
     "gulp": "^4.0.0",
     "gulp-javascript-obfuscator": "^1.1.5",
     "jest": "^24.5.0",
-    "prettier": "^1.16.4",
     "prettier-tslint": "^0.4.2",
     "rollup": "^1.7.0",
     "ts-jest": "^24.0.0",

@@ -9,7 +9,7 @@ import { CallbackResult } from './common';
  * @param param1 Parameters for promisify.
  * @return Promise that handles the callback.
  */
-export default function (
+export default function(
   globalObject: any,
   {
     callbackName,

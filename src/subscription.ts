@@ -1,4 +1,4 @@
-import { CallbackResult } from "./common";
+import { CallbackResult } from './common';
 
 /** Represents an object that can be unsubscribed from to termindate a stream. */
 export type Subscription = Readonly<{ unsubscribe: () => unknown }>;

@@ -5,7 +5,7 @@ import { CallbackResult } from './common';
  * @param globalObject The global object - generally window.
  * @param param1 The required parameters.
  */
-export default function (
+export default function(
   globalObject: any,
   {
     callbackNameFunc
