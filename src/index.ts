@@ -11,59 +11,8 @@ type CallbackResult = Readonly<{
   status_code: number;
 }>;
 
-type GlobalCallbackResult = CallbackResult &
-  Readonly<{
-    /** The request ID to access the correct callback. */
-    requestID: string;
-  }>;
-
-type GetCallbackNameParams = Readonly<{
-  /** The name of the module that owns the method. */
-  moduleName: string;
-
-  /** The name of the method being wrapped. */
-  funcName: string;
-
-  /** The request ID of the callback. */
-  requestID: number | string | null;
-}>;
-
-type PromisifyParams = Readonly<{
-  /** The name of the module that owns the method. */
-  moduleName: string;
-
-  /** The name of the method being wrapped. */
-  funcName: string;
-
-  /** The method being wrapped. */
-  funcToWrap: Function;
-
-  /**
-   * A unique request ID that can be used to distinguish one request from
-   * another.
-   */
-  requestID: string;
-}>;
-
-type SetUpGlobalCallbackParams = Readonly<{
-  /** Get the name of the relevant callback. */
-  callbackNameFunc: (requestID: number | string | null) => string;
-}>;
-
-/** Method parameters for iOS. */
-export type IOSMethodParameter<MethodKeys extends string> = Readonly<{
-  /** The method name. */
-  method: MethodKeys;
-
-  /** The method parameters. */
-  parameters: Readonly<{ requestID: string | number; [K: string]: unknown }>;
-
-  /** The name of the callback. */
-  callbackName: string;
-}>;
-
 /** Method parameters for cross-platform usage. */
-export type WrappedMethodParameter = Readonly<{
+type WrappedMethodParameter = Readonly<{
   /** The name of the parameter. */
   paramName: string;
 
@@ -100,6 +49,18 @@ type WrappedIOSModule<MethodKeys extends string> = Readonly<{
   ) => PromiseLike<unknown>;
 }>;
 
+/** Method parameters for iOS. */
+export type IOSMethodParameter<MethodKeys extends string> = Readonly<{
+  /** The method name. */
+  method: MethodKeys;
+
+  /** The method parameters. */
+  parameters: Readonly<{ requestID: string | number; [K: string]: unknown }>;
+
+  /** The name of the callback. */
+  callbackName: string;
+}>;
+
 /**
  * Get the keys of a module.
  * @param module The module being wrapped.
@@ -121,7 +82,16 @@ function getCallbackName({
   moduleName,
   funcName,
   requestID: req
-}: GetCallbackNameParams): string {
+}: Readonly<{
+  /** The name of the module that owns the method. */
+  moduleName: string;
+
+  /** The name of the method being wrapped. */
+  funcName: string;
+
+  /** The request ID of the callback. */
+  requestID: number | string | null;
+}>): string {
   return `${moduleName}_${funcName}Callback${req !== null ? `_${req}` : ''}`;
 }
 
@@ -136,10 +106,17 @@ function getCallbackName({
  */
 function promisifyCallback(
   globalObject: any,
-  { funcToWrap, ...rest }: PromisifyParams
-): PromiseLike<any> {
-  const callbackName = getCallbackName(rest);
+  {
+    callbackName,
+    funcToWrap
+  }: Readonly<{
+    /** The method being wrapped. */
+    funcToWrap: Function;
 
+    /** The name of the callback that will receive the results. */
+    callbackName: string;
+  }>
+): PromiseLike<any> {
   return new Promise(resolve => {
     globalObject[callbackName] = (data: CallbackResult) => resolve(data);
     funcToWrap();
@@ -153,7 +130,12 @@ function promisifyCallback(
  */
 function setUpGlobalCallback(
   globalObject: any,
-  { callbackNameFunc }: SetUpGlobalCallbackParams
+  {
+    callbackNameFunc
+  }: Readonly<{
+    /** Get the name of the relevant callback. */
+    callbackNameFunc: (requestID: number | string | null) => string;
+  }>
 ) {
   const globalCallbackName = callbackNameFunc(null);
 
@@ -161,12 +143,15 @@ function setUpGlobalCallback(
     /**
      * This is the global callback for this method. Native code will need to
      * invoke this callback in order to pass results to web.
-     * @param param0 The returned callback request ID.
      */
     globalObject[globalCallbackName] = ({
       requestID,
       ...callbackRest
-    }: GlobalCallbackResult) => {
+    }: CallbackResult &
+      Readonly<{
+        /** The request ID to access the correct callback. */
+        requestID: string;
+      }>) => {
       const callbackName = callbackNameFunc(requestID);
       globalObject[callbackName] && globalObject[callbackName](callbackRest);
       delete globalObject[callbackName];
@@ -202,9 +187,7 @@ export function wrapAndroidModule<Module extends AndroidModule>(
           currentRequestID += 1;
 
           return promisifyCallback(globalObject, {
-            moduleName,
-            requestID,
-            funcName: key,
+            callbackName: callbackNameFunc(requestID),
             funcToWrap: moduleObj[key].bind(
               moduleObj,
               requestID,
@@ -265,10 +248,8 @@ export function wrapIOSModule<MethodKeys extends string>(
       };
 
       return promisifyCallback(globalObject, {
-        moduleName,
-        funcName: method,
-        funcToWrap: moduleObj.postMessage.bind(moduleObj, nativeMethodParams),
-        requestID: `${requestID}`
+        callbackName: callbackNameFunc(requestID),
+        funcToWrap: moduleObj.postMessage.bind(moduleObj, nativeMethodParams)
       });
     }
   };
