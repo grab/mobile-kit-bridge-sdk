@@ -2,8 +2,6 @@ import bluebird from 'bluebird';
 import { IOSMethodParameter, wrapAndroidModule, wrapIOSModule } from './index';
 import { createMethodParameter } from './utils';
 
-let globalObject: any = {};
-
 function formatResult(param1: unknown, param2: unknown) {
   return `${param1}-${param2}`;
 }
@@ -12,7 +10,7 @@ function formatError(param: unknown) {
   return `Error: ${param}`;
 }
 
-function createTestADRModule() {
+function createTestADRModule(globalObject: any) {
   return {
     getSomething(
       requestID: string,
@@ -27,17 +25,27 @@ function createTestADRModule() {
         status_code: 200
       });
     },
-    getSomethingStream(requestID: string, param: string, callbackName: string) {
-      setInterval(() => {
-        console.log(param, callbackName);
+    getSomethingStream(
+      requestID: string,
+      interval: number,
+      callbackName: string
+    ) {
+      let count = 0;
 
-        globalObject[callbackName]({
-          requestID,
-          result: param,
-          error: null,
-          status_code: 200
-        });
-      },          1000);
+      const intervalID = setInterval(() => {
+        if (globalObject[callbackName]) {
+          globalObject[callbackName]({
+            requestID,
+            result: count,
+            error: null,
+            status_code: 200
+          });
+
+          count += 1;
+        } else {
+          clearInterval(intervalID);
+        }
+      },                             interval);
     },
     throwError(requestID: string, param: string) {
       globalObject.TestADRModule_throwErrorCallback({
@@ -50,13 +58,15 @@ function createTestADRModule() {
   };
 }
 
-function createTestIOSModule() {
+function createTestIOSModule(globalObject: any) {
   return {
     postMessage: ({
       method,
       parameters: { requestID, ...rest },
       callbackName
-    }: IOSMethodParameter<'getSomething' | 'throwError'>) => {
+    }: IOSMethodParameter<
+      'getSomething' | 'getSomethingStream' | 'throwError'
+    >) => {
       switch (method) {
         case 'getSomething':
           globalObject[callbackName]({
@@ -65,6 +75,29 @@ function createTestIOSModule() {
             error: null,
             status_code: 200
           });
+
+          break;
+
+        case 'getSomethingStream':
+          let count = 0;
+
+          const intervalID = setInterval(
+            () => {
+              if (globalObject[callbackName]) {
+                globalObject[callbackName]({
+                  requestID,
+                  result: count,
+                  error: null,
+                  status_code: 200
+                });
+
+                count += 1;
+              } else {
+                clearInterval(intervalID);
+              }
+            },
+            rest.interval as number
+          );
 
           break;
 
@@ -121,7 +154,10 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     });
   }
 
-  async function test_moduleMethod_withMultipleInvocations(wrappedModule: any) {
+  async function test_moduleMethod_withMultipleInvocations(
+    globalObject: any,
+    wrappedModule: any
+  ) {
     // Setup
     const rounds = 100;
 
@@ -142,6 +178,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // Then
     expect(results).toEqual(expected);
+    console.log('>>>>>>>>>>>>>>>>>>>>', globalObject);
 
     expect(
       Object.keys(globalObject).filter(key => key.indexOf('getSomething') > -1)
@@ -150,63 +187,77 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
   function test_moduleMethod_withStream(wrappedModule: any, done: Function) {
     // Setup
-    const param = 'Hey';
+    const interval = 200;
+    const timeout = 2100;
+    const streamedValues: string[] = [];
 
     // When
-    wrappedModule.invoke(
-      'getSomethingStream',
-      createMethodParameter('param', param)
-    );
+    wrappedModule
+      .invoke('getSomethingStream', createMethodParameter('interval', interval))
+      .subscribe((value: string) => streamedValues.push(value));
 
     // Then
     setTimeout(() => {
+      const length = (timeout - (timeout % interval)) / interval;
+      expect(streamedValues).toHaveLength(length);
+      expect([...new Set(streamedValues)]).toHaveLength(length);
       done();
-    },         2000);
+    },         2100);
   }
 
-  beforeEach(() => {
-    globalObject = {};
-  });
-
   it('Should wrap Android method with normal return correctly', async () => {
-    const adr = createTestADRModule();
+    const globalObject = {};
+    const adr = createTestADRModule(globalObject);
     const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
     await test_moduleMethod_withNormalReturn(wrapped);
   });
 
   it('Should wrap Android method with error return correctly', async () => {
-    const adr = createTestADRModule();
+    const globalObject = {};
+    const adr = createTestADRModule(globalObject);
     const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
     await test_moduleMethod_withError(wrapped);
   });
 
   it('Should correctly call Android method multiple times', async () => {
-    const adr = createTestADRModule();
+    const globalObject = {};
+    const adr = createTestADRModule(globalObject);
     const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
-    await test_moduleMethod_withMultipleInvocations(wrapped);
+    await test_moduleMethod_withMultipleInvocations(globalObject, wrapped);
   });
 
-  it.only('Should correctly stream values from Android method call', done => {
-    const adr = createTestADRModule();
+  it('Should correctly stream values from Android method call', done => {
+    const globalObject = {};
+    const adr = createTestADRModule(globalObject);
     const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
     test_moduleMethod_withStream(wrapped, done);
   });
 
   it('Should wrap iOS method with normal return correctly', async () => {
-    const ios = createTestIOSModule();
+    const globalObject = {};
+    const ios = createTestIOSModule(globalObject);
     const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
     await test_moduleMethod_withNormalReturn(wrapped);
   });
 
   it('Should wrap iOS method with error return correctly', async () => {
-    const ios = createTestIOSModule();
+    const globalObject = {};
+    const ios = createTestIOSModule(globalObject);
     const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
     await test_moduleMethod_withError(wrapped);
   });
 
   it('Should correctly call Android method multiple times', async () => {
-    const ios = createTestIOSModule();
+    const globalObject = {};
+    const ios = createTestIOSModule(globalObject);
     const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
-    await test_moduleMethod_withMultipleInvocations(wrapped);
+    await test_moduleMethod_withMultipleInvocations(globalObject, wrapped);
+  });
+
+  it('Should correctly stream values from iOS method call', done => {
+    const globalObject = {};
+    const ios = createTestIOSModule(globalObject);
+    const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
+    test_moduleMethod_withStream(wrapped, done);
   });
 });
