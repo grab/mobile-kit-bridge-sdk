@@ -1,5 +1,6 @@
 import { Omit } from 'ts-essentials';
-import { CallbackResult } from './common';
+import { createSubscription, Stream, Subscription } from './subscription';
+import { CallbackResult, isStreamFunction } from './utils';
 
 type Params = Readonly<{
   /** The name of the function to be wrapped. */
@@ -32,6 +33,34 @@ function promisifyCallback(
 }
 
 /**
+ * Convert the callback to a stream to receive continual values.
+ * @param globalObject The global object - generally window.
+ * @param param1 Parameters for stream creation.
+ * @return A stream that can be subscribed to.
+ */
+function streamCallback(
+  globalObject: any,
+  { callbackName, funcToWrap }: Omit<Params, 'funcNameToWrap'>
+): Stream {
+  return {
+    subscribe: (onValue: (data: CallbackResult) => unknown): Subscription => {
+      globalObject[callbackName] = (data: CallbackResult) => onValue(data);
+      funcToWrap();
+
+      return createSubscription(() => {
+        /**
+         * Native should check for the existence of this callback every time a
+         * value is bound to be delivered. If no such callback exists, it may
+         * be assumed that the web client has unsubscribed from this stream, and
+         * therefore the stream may be terminated on the mobile side.
+         */
+        delete globalObject[callbackName];
+      });
+    }
+  };
+}
+
+/**
  * Handle the simplication of callbacks for both single asynchronous return
  * values and streams.
  * @param globalObject The global object - generally window.
@@ -42,19 +71,29 @@ export function simplifyCallback(
   globalObject: any,
   { funcNameToWrap, ...restParams }: Params
 ) {
+  if (isStreamFunction(funcNameToWrap)) {
+    return streamCallback(globalObject, restParams);
+  }
+
   return promisifyCallback(globalObject, restParams);
 }
 
 /**
- * Set up global callback to handle multiple request IDs.
+ * Set up global callback to handle multiple request IDs. This will be invoked
+ * only once, and should be done lazily, i.e. when the method is called for the
+ * first time.
  * @param globalObject The global object - generally window.
  * @param param1 The required parameters.
  */
 export function setupGlobalCallback(
   globalObject: any,
   {
+    funcNameToWrap,
     callbackNameFunc
   }: Readonly<{
+    /** The name of the function to be wrapped. */
+    funcNameToWrap: string;
+
     /** Get the name of the relevant callback. */
     callbackNameFunc: (requestID: number | string | null) => string;
   }>
@@ -75,8 +114,15 @@ export function setupGlobalCallback(
         requestID: string;
       }>) => {
       const callbackName = callbackNameFunc(requestID);
-      globalObject[callbackName] && globalObject[callbackName](callbackRest);
-      delete globalObject[callbackName];
+      globalObject[callbackName](callbackRest);
+
+      /**
+       * If the function being wrapped does not return a stream, remove the
+       * callback because this is a one-off operation.
+       */
+      if (!isStreamFunction(funcNameToWrap)) {
+        delete globalObject[callbackName];
+      }
     };
   }
 }

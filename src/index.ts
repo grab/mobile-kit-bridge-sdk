@@ -1,6 +1,9 @@
-import { WrappedMethodParameter } from './common';
 import { setupGlobalCallback, simplifyCallback } from './simplify-callback';
-import { getCallbackName, getModuleKeys } from './utils';
+import {
+  getCallbackName,
+  getModuleKeys,
+  WrappedMethodParameter
+} from './utils';
 
 type StringKeys<T> = Extract<keyof T, string>;
 
@@ -17,7 +20,7 @@ type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
   invoke: <MethodKey extends StringKeys<Original>>(
     method: MethodKey,
     ...params: WrappedMethodParameter[]
-  ) => PromiseLike<ReturnType<Original[MethodKey]>>;
+  ) => unknown;
 }>;
 
 /** Represents an iOS module. */
@@ -30,7 +33,7 @@ type WrappedIOSModule<MethodKeys extends string> = Readonly<{
   invoke: <MethodKey extends MethodKeys>(
     method: MethodKey,
     ...params: WrappedMethodParameter[]
-  ) => PromiseLike<unknown>;
+  ) => unknown;
 }>;
 
 /** Method parameters for iOS. */
@@ -65,12 +68,15 @@ export function wrapAndroidModule<Module extends AndroidModule>(
       const callbackNameFunc = (requestID: number | string | null) =>
         getCallbackName({ moduleName, requestID, funcName: key });
 
-      setupGlobalCallback(globalObject, { callbackNameFunc });
-
       return {
         [key]: (...methodParams: any[]) => {
           const requestID = `${currentRequestID}`;
           currentRequestID += 1;
+
+          setupGlobalCallback(globalObject, {
+            callbackNameFunc,
+            funcNameToWrap: key
+          });
 
           return simplifyCallback(globalObject, {
             callbackName: callbackNameFunc(requestID),
@@ -121,7 +127,10 @@ export function wrapIOSModule<MethodKeys extends string>(
       const callbackNameFunc = (requestID: number | string | null) =>
         getCallbackName({ moduleName, requestID, funcName: method });
 
-      setupGlobalCallback(globalObject, { callbackNameFunc });
+      setupGlobalCallback(globalObject, {
+        callbackNameFunc,
+        funcNameToWrap: method
+      });
 
       const nativeMethodParams: IOSMethodParameter<MethodKeys> = {
         method,
