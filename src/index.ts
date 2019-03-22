@@ -1,6 +1,6 @@
 import { WrappedMethodParameter } from './common';
-import promisifyCallback from './promisify-callback';
 import setupGlobal from './setup-global';
+import simplifyCallback from './simplify-callback';
 import { getCallbackName, getModuleKeys } from './utils';
 
 type StringKeys<T> = Extract<keyof T, string>;
@@ -73,7 +73,7 @@ export function wrapAndroidModule<Module extends AndroidModule>(
           const requestID = `${currentRequestID}`;
           currentRequestID += 1;
 
-          return promisifyCallback(globalObject, {
+          return simplifyCallback(globalObject, {
             callbackName: callbackNameFunc(requestID),
             funcToWrap: moduleObj[key].bind(
               moduleObj,
@@ -134,7 +134,7 @@ export function wrapIOSModule<MethodKeys extends string>(
         callbackName: callbackNameFunc(null)
       };
 
-      return promisifyCallback(globalObject, {
+      return simplifyCallback(globalObject, {
         callbackName: callbackNameFunc(requestID),
         funcToWrap: moduleObj.postMessage.bind(moduleObj, nativeMethodParams)
       });
