@@ -75,6 +75,7 @@ export function wrapAndroidModule<Module extends AndroidModule>(
 
           return simplifyCallback(globalObject, {
             callbackName: callbackNameFunc(requestID),
+            funcNameToWrap: key,
             funcToWrap: moduleObj[key].bind(
               moduleObj,
               requestID,
@@ -136,6 +137,7 @@ export function wrapIOSModule<MethodKeys extends string>(
 
       return simplifyCallback(globalObject, {
         callbackName: callbackNameFunc(requestID),
+        funcNameToWrap: method,
         funcToWrap: moduleObj.postMessage.bind(moduleObj, nativeMethodParams)
       });
     }

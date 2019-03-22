@@ -1,6 +1,10 @@
+import { Omit } from 'ts-essentials';
 import { CallbackResult } from './common';
 
 type Params = Readonly<{
+  /** The name of the function to be wrapped. */
+  funcNameToWrap: string;
+
   /** The method being wrapped. */
   funcToWrap: Function;
 
@@ -19,7 +23,7 @@ type Params = Readonly<{
  */
 function promisifyCallback(
   globalObject: any,
-  { callbackName, funcToWrap }: Params
+  { callbackName, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): PromiseLike<any> {
   return new Promise(resolve => {
     globalObject[callbackName] = (data: CallbackResult) => resolve(data);
@@ -31,9 +35,12 @@ function promisifyCallback(
  * Handle the simplication of callbacks for both single asynchronous return
  * values and streams.
  * @param globalObject The global object - generally window.
- * @param params Parameters for callback simplification.
+ * @param param1 Parameters for callback simplification.
  * @return Check the return types for private functions in this module.
  */
-export default function (globalObject: any, params: Params) {
-  return promisifyCallback(globalObject, params);
+export default function (
+  globalObject: any,
+  { funcNameToWrap, ...restParams }: Params
+) {
+  return promisifyCallback(globalObject, restParams);
 }
