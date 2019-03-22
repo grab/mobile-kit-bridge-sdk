@@ -1,23 +1,5 @@
+import { WrappedMethodParameter } from './common';
 declare type StringKeys<T> = Extract<keyof T, string>;
-/** Method parameters for iOS. */
-export declare type IOSMethodParameter<MethodKeys extends string> = Readonly<{
-    /** The method name. */
-    method: MethodKeys;
-    /** The method parameters. */
-    parameters: Readonly<{
-        requestID: string | number;
-        [K: string]: unknown;
-    }>;
-    /** The name of the callback. */
-    callbackName: string;
-}>;
-/** Method parameters for cross-platform usage. */
-export declare type WrappedMethodParameter = Readonly<{
-    /** The name of the parameter. */
-    paramName: string;
-    /** The parameter value. */
-    paramValue: unknown;
-}>;
 /** Represents an Android module. */
 declare type AndroidModule = Readonly<{
     [K: string]: (...params: any[]) => unknown;
@@ -37,6 +19,18 @@ declare type IOSModule<MethodKeys extends string> = Readonly<{
 declare type WrappedIOSModule<MethodKeys extends string> = Readonly<{
     invoke: <MethodKey extends MethodKeys>(method: MethodKey, ...params: WrappedMethodParameter[]) => PromiseLike<unknown>;
 }>;
+/** Method parameters for iOS. */
+export declare type IOSMethodParameter<MethodKeys extends string> = Readonly<{
+    /** The method name. */
+    method: MethodKeys;
+    /** The method parameters. */
+    parameters: Readonly<{
+        requestID: string | number;
+        [K: string]: unknown;
+    }>;
+    /** The name of the callback. */
+    callbackName: string;
+}>;
 /**
  * Wrap an Android module.
  * @param globalObject The global object - generally window.
@@ -53,13 +47,6 @@ export declare function wrapAndroidModule<Module extends AndroidModule>(globalOb
  * @return The wrapped module.
  */
 export declare function wrapIOSModule<MethodKeys extends string>(globalObject: any, moduleName: string, moduleObj: IOSModule<MethodKeys>): WrappedIOSModule<MethodKeys>;
-/**
- * Create a parameter object to work with both Android and iOS module wrappers.
- * @param paramName The parameter name.
- * @param paramValue The parameter value.
- * @return A Parameter object.
- */
-export declare function createMethodParameter(paramName: WrappedMethodParameter['paramName'], paramValue: WrappedMethodParameter['paramValue']): WrappedMethodParameter;
 /**
  * Wrap the appropriate module based on whether or not it's Android/iOS.
  * @param globalObject The global object - generally window.

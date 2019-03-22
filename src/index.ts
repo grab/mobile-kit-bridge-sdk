@@ -1,24 +1,9 @@
+import { WrappedMethodParameter } from './common';
+import promisifyCallback from './promisify-callback';
+import setupGlobal from './setup-global';
+import { getCallbackName, getModuleKeys } from './utils';
+
 type StringKeys<T> = Extract<keyof T, string>;
-
-type CallbackResult = Readonly<{
-  /** The result of the operation. */
-  result: unknown;
-
-  /** The error object, if any. */
-  error: unknown;
-
-  /** The status code. */
-  status_code: number;
-}>;
-
-/** Method parameters for cross-platform usage. */
-type WrappedMethodParameter = Readonly<{
-  /** The name of the parameter. */
-  paramName: string;
-
-  /** The parameter value. */
-  paramValue: unknown;
-}>;
 
 /** Represents an Android module. */
 type AndroidModule = Readonly<{
@@ -62,104 +47,6 @@ export type IOSMethodParameter<MethodKeys extends string> = Readonly<{
 }>;
 
 /**
- * Get the keys of a module.
- * @param module The module being wrapped.
- * @return Array of module keys.
- */
-function getModuleKeys<Module>(module: Module) {
-  return [
-    ...Object.keys(module),
-    ...Object.getOwnPropertyNames(Object.getPrototypeOf(module))
-  ];
-}
-
-/**
- * Get the callback name that will be used to access global callback.
- * @param param0 The required parameters.
- * @return The combined callback name.
- */
-function getCallbackName({
-  moduleName,
-  funcName,
-  requestID: req
-}: Readonly<{
-  /** The name of the module that owns the method. */
-  moduleName: string;
-
-  /** The name of the method being wrapped. */
-  funcName: string;
-
-  /** The request ID of the callback. */
-  requestID: number | string | null;
-}>): string {
-  return `${moduleName}_${funcName}Callback${req !== null ? `_${req}` : ''}`;
-}
-
-/**
- * For web bridges, native code will run a JS script that accesses a global
- * callback related to the module's method being wrapped and pass in results so
- * that partner app can access them. This function promisifies this callback to
- * support async-await/Promise.
- * @param globalObject The global object - generally window.
- * @param param1 Parameters for promisify.
- * @return Promise that handles the callback.
- */
-function promisifyCallback(
-  globalObject: any,
-  {
-    callbackName,
-    funcToWrap
-  }: Readonly<{
-    /** The method being wrapped. */
-    funcToWrap: Function;
-
-    /** The name of the callback that will receive the results. */
-    callbackName: string;
-  }>
-): PromiseLike<any> {
-  return new Promise(resolve => {
-    globalObject[callbackName] = (data: CallbackResult) => resolve(data);
-    funcToWrap();
-  });
-}
-
-/**
- * Set up global callback to handle multiple request IDs.
- * @param globalObject The global object - generally window.
- * @param param1 The required parameters.
- */
-function setUpGlobalCallback(
-  globalObject: any,
-  {
-    callbackNameFunc
-  }: Readonly<{
-    /** Get the name of the relevant callback. */
-    callbackNameFunc: (requestID: number | string | null) => string;
-  }>
-) {
-  const globalCallbackName = callbackNameFunc(null);
-
-  if (!globalObject[globalCallbackName]) {
-    /**
-     * This is the global callback for this method. Native code will need to
-     * invoke this callback in order to pass results to web.
-     */
-    globalObject[globalCallbackName] = ({
-      requestID,
-      ...callbackRest
-    }: CallbackResult &
-      Readonly<{
-        /** The request ID to access the correct callback. */
-        requestID: string;
-      }>) => {
-      const callbackName = callbackNameFunc(requestID);
-      globalObject[callbackName] && globalObject[callbackName](callbackRest);
-      delete globalObject[callbackName];
-    };
-  }
-}
-
-/**
  * Wrap an Android module.
  * @param globalObject The global object - generally window.
  * @param moduleName The name of the module that owns the method.
@@ -179,7 +66,7 @@ export function wrapAndroidModule<Module extends AndroidModule>(
       const callbackNameFunc = (requestID: number | string | null) =>
         getCallbackName({ moduleName, requestID, funcName: key });
 
-      setUpGlobalCallback(globalObject, { callbackNameFunc });
+      setupGlobal(globalObject, { callbackNameFunc });
 
       return {
         [key]: (...methodParams: any[]) => {
@@ -234,7 +121,7 @@ export function wrapIOSModule<MethodKeys extends string>(
       const callbackNameFunc = (requestID: number | string | null) =>
         getCallbackName({ moduleName, requestID, funcName: method });
 
-      setUpGlobalCallback(globalObject, { callbackNameFunc });
+      setupGlobal(globalObject, { callbackNameFunc });
 
       const nativeMethodParams: IOSMethodParameter<MethodKeys> = {
         method,
@@ -253,19 +140,6 @@ export function wrapIOSModule<MethodKeys extends string>(
       });
     }
   };
-}
-
-/**
- * Create a parameter object to work with both Android and iOS module wrappers.
- * @param paramName The parameter name.
- * @param paramValue The parameter value.
- * @return A Parameter object.
- */
-export function createMethodParameter(
-  paramName: WrappedMethodParameter['paramName'],
-  paramValue: WrappedMethodParameter['paramValue']
-): WrappedMethodParameter {
-  return { paramName, paramValue };
 }
 
 /**
