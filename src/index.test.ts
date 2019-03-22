@@ -12,30 +12,19 @@ function formatError(param: unknown) {
 
 function createTestADRModule(globalObject: any) {
   return {
-    getSomething(
-      requestID: string,
-      param1: string,
-      param2: string,
-      callbackName: string
-    ) {
+    getSomething(param1: string, param2: string, callbackName: string) {
       globalObject[callbackName]({
-        requestID,
         result: formatResult(param1, param2),
         error: null,
         status_code: 200
       });
     },
-    getSomethingStream(
-      requestID: string,
-      interval: number,
-      callbackName: string
-    ) {
+    getSomethingStream(interval: number, callbackName: string) {
       let count = 0;
 
       const intervalID = setInterval(() => {
         if (globalObject[callbackName]) {
           globalObject[callbackName]({
-            requestID,
             result: count,
             error: null,
             status_code: 200
@@ -47,9 +36,8 @@ function createTestADRModule(globalObject: any) {
         }
       },                             interval);
     },
-    throwError(requestID: string, param: string) {
-      globalObject.TestADRModule_throwErrorCallback({
-        requestID,
+    throwError(param: string, callbackName: string) {
+      globalObject[callbackName]({
         result: null,
         error: { message: formatError(param) },
         status_code: 404
@@ -62,7 +50,7 @@ function createTestIOSModule(globalObject: any) {
   return {
     postMessage: ({
       method,
-      parameters: { requestID, ...rest },
+      parameters,
       callbackName
     }: IOSMethodParameter<
       'getSomething' | 'getSomethingStream' | 'throwError'
@@ -70,8 +58,7 @@ function createTestIOSModule(globalObject: any) {
       switch (method) {
         case 'getSomething':
           globalObject[callbackName]({
-            requestID,
-            result: formatResult(rest.param1, rest.param2),
+            result: formatResult(parameters.param1, parameters.param2),
             error: null,
             status_code: 200
           });
@@ -85,7 +72,6 @@ function createTestIOSModule(globalObject: any) {
             () => {
               if (globalObject[callbackName]) {
                 globalObject[callbackName]({
-                  requestID,
                   result: count,
                   error: null,
                   status_code: 200
@@ -96,16 +82,15 @@ function createTestIOSModule(globalObject: any) {
                 clearInterval(intervalID);
               }
             },
-            rest.interval as number
+            parameters.interval as number
           );
 
           break;
 
         case 'throwError':
           globalObject[callbackName]({
-            requestID,
             result: null,
-            error: { message: formatError(rest.param) },
+            error: { message: formatError(parameters.param) },
             status_code: 404
           });
 
@@ -178,11 +163,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // Then
     expect(results).toEqual(expected);
-    console.log('>>>>>>>>>>>>>>>>>>>>', globalObject);
-
-    expect(
-      Object.keys(globalObject).filter(key => key.indexOf('getSomething') > -1)
-    ).toHaveLength(1);
+    expect(Object.keys(globalObject)).toHaveLength(0);
   }
 
   function test_moduleMethod_withStream(wrappedModule: any, done: Function) {

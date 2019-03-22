@@ -27,7 +27,16 @@ function promisifyCallback(
   { callbackName, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): PromiseLike<any> {
   return new Promise(resolve => {
-    globalObject[callbackName] = (data: CallbackResult) => resolve(data);
+    globalObject[callbackName] = (data: CallbackResult) => {
+      resolve(data);
+
+      /**
+       * Since this is an one-off result, immediately remove the callback from
+       * global object to avoid polluting it.
+       */
+      delete globalObject[callbackName];
+    };
+
     funcToWrap();
   });
 }
@@ -76,53 +85,4 @@ export function simplifyCallback(
   }
 
   return promisifyCallback(globalObject, restParams);
-}
-
-/**
- * Set up global callback to handle multiple request IDs. This will be invoked
- * only once, and should be done lazily, i.e. when the method is called for the
- * first time.
- * @param globalObject The global object - generally window.
- * @param param1 The required parameters.
- */
-export function setupGlobalCallback(
-  globalObject: any,
-  {
-    funcNameToWrap,
-    callbackNameFunc
-  }: Readonly<{
-    /** The name of the function to be wrapped. */
-    funcNameToWrap: string;
-
-    /** Get the name of the relevant callback. */
-    callbackNameFunc: (requestID: number | string | null) => string;
-  }>
-) {
-  const globalCallbackName = callbackNameFunc(null);
-
-  if (!globalObject[globalCallbackName]) {
-    /**
-     * This is the global callback for this method. Native code will need to
-     * invoke this callback in order to pass results to web.
-     */
-    globalObject[globalCallbackName] = ({
-      requestID,
-      ...callbackRest
-    }: CallbackResult &
-      Readonly<{
-        /** The request ID to access the correct callback. */
-        requestID: string;
-      }>) => {
-      const callbackName = callbackNameFunc(requestID);
-      globalObject[callbackName](callbackRest);
-
-      /**
-       * If the function being wrapped does not return a stream, remove the
-       * callback because this is a one-off operation.
-       */
-      if (!isStreamFunction(funcNameToWrap)) {
-        delete globalObject[callbackName];
-      }
-    };
-  }
 }

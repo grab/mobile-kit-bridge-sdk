@@ -1,4 +1,4 @@
-import { setupGlobalCallback, simplifyCallback } from './simplify-callback';
+import { simplifyCallback } from './simplify-callback';
 import {
   getCallbackName,
   getModuleKeys,
@@ -42,7 +42,7 @@ export type IOSMethodParameter<MethodKeys extends string> = Readonly<{
   method: MethodKeys;
 
   /** The method parameters. */
-  parameters: Readonly<{ requestID: string | number; [K: string]: unknown }>;
+  parameters: Readonly<{ [K: string]: unknown }>;
 
   /** The name of the callback. */
   callbackName: string;
@@ -73,19 +73,13 @@ export function wrapAndroidModule<Module extends AndroidModule>(
           const requestID = `${currentRequestID}`;
           currentRequestID += 1;
 
-          setupGlobalCallback(globalObject, {
-            callbackNameFunc,
-            funcNameToWrap: key
-          });
-
           return simplifyCallback(globalObject, {
             callbackName: callbackNameFunc(requestID),
             funcNameToWrap: key,
             funcToWrap: moduleObj[key].bind(
               moduleObj,
-              requestID,
               ...methodParams,
-              callbackNameFunc(null)
+              callbackNameFunc(requestID)
             )
           });
         }
@@ -127,20 +121,14 @@ export function wrapIOSModule<MethodKeys extends string>(
       const callbackNameFunc = (requestID: number | string | null) =>
         getCallbackName({ moduleName, requestID, funcName: method });
 
-      setupGlobalCallback(globalObject, {
-        callbackNameFunc,
-        funcNameToWrap: method
-      });
-
       const nativeMethodParams: IOSMethodParameter<MethodKeys> = {
         method,
         parameters: {
           ...methodParams
             .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
-            .reduce((acc, item) => ({ ...acc, ...item }), {}),
-          requestID
+            .reduce((acc, item) => ({ ...acc, ...item }), {})
         },
-        callbackName: callbackNameFunc(null)
+        callbackName: callbackNameFunc(requestID)
       };
 
       return simplifyCallback(globalObject, {
