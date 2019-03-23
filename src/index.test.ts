@@ -245,6 +245,29 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     },         timeout);
   }
 
+  async function test_moduleMethodStream_shouldBeIdempotent(
+    globalObject: any,
+    wrappedModule: any
+  ) {
+    // Setup
+    const iterations = 1000;
+
+    const stream = wrappedModule.invoke(
+      'stream_getSomething',
+      createMethodParameter('param', 1)
+    );
+
+    // When
+    const subscriptions = [...Array(iterations)].map(() =>
+      stream.subscribe({ onValue: console.log })
+    );
+
+    // Then
+    expect(Object.keys(globalObject)).toHaveLength(iterations);
+    subscriptions.forEach(subscription => subscription.unsubscribe());
+    expect(Object.keys(globalObject)).toHaveLength(0);
+  }
+
   it('Should wrap Android method with normal return correctly', async () => {
     const globalObject = {};
     const adr = createTestADRModule(globalObject);
@@ -280,6 +303,13 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     test_moduleMethod_withTerminatingStream(wrapped, done);
   });
 
+  it('Should be idempotent for Android streams', async () => {
+    const globalObject = {};
+    const adr = createTestADRModule(globalObject);
+    const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
+    await test_moduleMethodStream_shouldBeIdempotent(globalObject, wrapped);
+  });
+
   it('Should wrap iOS method with normal return correctly', async () => {
     const globalObject = {};
     const ios = createTestIOSModule(globalObject);
@@ -313,5 +343,12 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const ios = createTestIOSModule(globalObject);
     const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
     test_moduleMethod_withTerminatingStream(wrapped, done);
+  });
+
+  it('Should be idempotent for iOS streams', async () => {
+    const globalObject = {};
+    const ios = createTestIOSModule(globalObject);
+    const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
+    await test_moduleMethodStream_shouldBeIdempotent(globalObject, wrapped);
   });
 });
