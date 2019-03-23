@@ -1,6 +1,6 @@
 import { Omit } from 'ts-essentials';
 import { createSubscription, Stream, Subscription } from './subscription';
-import { CallbackResult, isStreamFunction } from './utils';
+import { CallbackResult, isStreamFunction, isType } from './utils';
 
 type Params = Readonly<{
   /** The name of the function to be wrapped. */
@@ -11,6 +11,22 @@ type Params = Readonly<{
 
   /** The name of the callback that will receive the results. */
   callbackName: string;
+}>;
+
+/**
+ * Represents stream events that be used to communicate state of the stream
+ * from native to web.
+ */
+export enum StreamEvent {
+  STREAM_TERMINATED = 'STREAM_TERMINATED'
+}
+
+/**
+ * Represents an event result, which is a possible object that can be returned
+ * in place of the callback result.
+ */
+export type StreamEventResult = Readonly<{
+  event: StreamEvent;
 }>;
 
 /**
@@ -52,11 +68,28 @@ function streamCallback(
   { callbackName, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): Stream {
   return {
-    subscribe: (onValue: (data: CallbackResult) => unknown): Subscription => {
-      globalObject[callbackName] = (data: CallbackResult) => onValue(data);
+    subscribe: (
+      onValue: (data: CallbackResult) => unknown,
+      onComplete?: () => unknown
+    ): Subscription => {
+      let subscription: Subscription;
+      globalObject[callbackName] = (
+        data: CallbackResult | StreamEventResult
+      ) => {
+        if (isType<CallbackResult>(data, 'result', 'error', 'status_code')) {
+          onValue(data);
+        } else {
+          switch (data.event) {
+            case StreamEvent.STREAM_TERMINATED:
+              subscription.unsubscribe();
+              break;
+          }
+        }
+      };
+
       funcToWrap();
 
-      return createSubscription(() => {
+      subscription = createSubscription(() => {
         /**
          * Native should check for the existence of this callback every time a
          * value is bound to be delivered. If no such callback exists, it may
@@ -64,7 +97,10 @@ function streamCallback(
          * therefore the stream may be terminated on the mobile side.
          */
         delete globalObject[callbackName];
+        if (!!onComplete) onComplete();
       });
+
+      return subscription;
     }
   };
 }

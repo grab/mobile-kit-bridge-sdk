@@ -1,11 +1,17 @@
 import { CallbackResult } from './utils';
 
 /** Represents an object that can be unsubscribed from to termindate a stream. */
-export type Subscription = Readonly<{ unsubscribe: () => unknown }>;
+export type Subscription = Readonly<{
+  isUnsubscribed: () => boolean;
+  unsubscribe: () => unknown;
+}>;
 
 /** Represents a Stream that can deliver some data continually */
 export type Stream = Readonly<{
-  subscribe: (onValue: (data: CallbackResult) => unknown) => Subscription;
+  subscribe: (
+    onValue: (data: CallbackResult) => unknown,
+    onComplete?: () => unknown
+  ) => Subscription;
 }>;
 
 /**
@@ -16,6 +22,7 @@ export function createSubscription(unsubscribe: () => unknown): Subscription {
   let unsubscribed = false;
 
   return {
+    isUnsubscribed: () => unsubscribed,
     unsubscribe: () => {
       if (!unsubscribed) {
         unsubscribe();
