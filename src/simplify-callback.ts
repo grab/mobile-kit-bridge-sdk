@@ -69,7 +69,7 @@ function streamCallback(
   { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): DataStream {
   return {
-    subscribe: ({ onValue, onComplete }): Subscription => {
+    subscribe: (handlers): Subscription => {
       /** Generate callback name dynamically to make this stream idempotent. */
       const callbackName = callbackNameFunc();
       let subscription: Subscription;
@@ -78,7 +78,7 @@ function streamCallback(
         data: CallbackResult | StreamEventResult
       ) => {
         if (isType<CallbackResult>(data, 'result', 'error', 'status_code')) {
-          onValue(data);
+          handlers && handlers.onValue && handlers.onValue(data);
         } else {
           switch (data.event) {
             case StreamEvent.STREAM_TERMINATED:
@@ -98,7 +98,7 @@ function streamCallback(
          * therefore the stream may be terminated on the mobile side.
          */
         delete globalObject[callbackName];
-        if (!!onComplete) onComplete();
+        handlers && handlers.onComplete && handlers.onComplete();
       });
 
       return subscription;

@@ -28,14 +28,14 @@ export declare type StreamEventResult = Readonly<{
  * @return Check the return types for private functions in this module.
  */
 export declare function simplifyCallback(globalObject: any, { funcNameToWrap, ...restParams }: Params): PromiseLike<any> | Readonly<{
-    subscribe: (handlers: Readonly<{
-        onValue: (data: Readonly<{
+    subscribe: (handlers?: Readonly<{
+        onValue?: ((data: Readonly<{
             result: unknown;
             error: unknown;
             status_code: number;
-        }>) => unknown;
+        }>) => unknown) | undefined;
         onComplete?: (() => unknown) | undefined;
-    }>) => Readonly<{
+    }> | undefined) => Readonly<{
         isUnsubscribed: () => boolean;
         unsubscribe: () => unknown;
     }>;

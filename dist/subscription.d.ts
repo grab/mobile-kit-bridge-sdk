@@ -6,12 +6,12 @@ export declare type Subscription = Readonly<{
 }>;
 /** Represents functions that can handle stream events. */
 export declare type DataStreamHandlers = Readonly<{
-    onValue: (data: CallbackResult) => unknown;
+    onValue?: (data: CallbackResult) => unknown;
     onComplete?: () => unknown;
 }>;
 /** Represents a Stream that can deliver some data continually */
 export declare type DataStream = Readonly<{
-    subscribe: (handlers: DataStreamHandlers) => Subscription;
+    subscribe: (handlers?: DataStreamHandlers) => Subscription;
 }>;
 /**
  * Create a subscription that can only be unsubscribed from once.
