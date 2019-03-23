@@ -1,7 +1,7 @@
 import { simplifyCallback } from './simplify-callback';
 import {
   getCallbackName,
-  getModuleKeys,
+  getObjectKeys,
   WrappedMethodParameter
 } from './utils';
 
@@ -60,7 +60,7 @@ export function wrapAndroidModule<Module extends AndroidModule>(
   moduleName: string,
   moduleObj: Module
 ): WrappedAndroidModule<Module> {
-  const wrappedModule = getModuleKeys(moduleObj)
+  const wrappedModule = getObjectKeys(moduleObj)
     .filter(key => typeof moduleObj[key] === 'function')
     .map((key: keyof Module & string) => {
       let currentRequestID = 0;
@@ -160,3 +160,5 @@ export function wrapModule(globalObject: any, moduleName: string) {
     globalObject[moduleName] = wrappedModule;
   }
 }
+
+export { StreamEvent as StreamEvents } from './simplify-callback';

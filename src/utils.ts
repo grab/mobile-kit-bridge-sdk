@@ -19,14 +19,14 @@ export type WrappedMethodParameter = Readonly<{
 }>;
 
 /**
- * Get the keys of a module.
- * @param module The module being wrapped.
- * @return Array of module keys.
+ * Get the keys of an object.
+ * @param object Some object.
+ * @return Array of object keys.
  */
-export function getModuleKeys<Module>(module: Module) {
+export function getObjectKeys<T>(object: T) {
   return [
-    ...Object.keys(module),
-    ...Object.getOwnPropertyNames(Object.getPrototypeOf(module))
+    ...Object.keys(object),
+    ...Object.getOwnPropertyNames(Object.getPrototypeOf(object))
   ];
 }
 
@@ -71,4 +71,17 @@ export function createMethodParameter(
   paramValue: WrappedMethodParameter['paramValue']
 ): WrappedMethodParameter {
   return { paramName, paramValue };
+}
+
+/**
+ * Check if an object is of a certain type.
+ * @param object Some object.
+ * @return Whether the object is of this type.
+ */
+export function isType<
+  T,
+  K extends Extract<keyof T, string> = Extract<keyof T, string>
+>(object: unknown, ...keys: K[]): object is T {
+  const objectKeys = getObjectKeys(object);
+  return keys.every(key => objectKeys.indexOf(key) >= 0);
 }
