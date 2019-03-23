@@ -1,6 +1,8 @@
 # mobile-kit-bridge-sdk
 
-SDK for mobile kit bridge to offer unified method signatures for Android/iOS.
+SDK for mobile module bridge to offer unified method signatures for Android/iOS.
+
+## Asynchronous returns
 
 For example:
 
@@ -9,45 +11,45 @@ const identifier = await window.LocaleKit.invoke('getLocaleIdentifier');
 
 await window.AnalyticsModule.invoke(
   'track',
-  createKitMethodParameter('analyticsEvent', event),
+  createMethodParameter('analyticsEvent', event),
 )
 
 await window.MediaKit.invoke(
   'playDRMContent',
-  createKitMethodParameter('contentURL', contentURL),
-  createKitMethodParameter('license', license),
+  createMethodParameter('contentURL', contentURL),
+  createMethodParameter('license', license),
   ...
 )
 ```
 
-All module methods will have **requestID** as one of the parameters:
+All module methods will have `callbackName` as one of the parameters:
 
 ```java
 class AnalyticsModuleBridge {
-  fun track(requestID: String, event: Any) {...}
+  fun track(event: Any, callbackName: string) {...}
 }
 ```
 
 ```swift
 class AnalyticsModuleBridge {
-  func track(requestID: String, event: Any) {...}
+  func track(event: Any, callbackName: string) {...}
 }
 ```
 
-For the sake of standardization, **all** kit methods must invoke the relevant callback after they finish, even if they run synchronously or do not have anything meaningful to return. Pass back the request ID to identify the correct sub-callback to invoke:
+For the sake of standardization, **all** module methods must invoke the relevant callback after they finish, even if they run synchronously or do not have anything meaningful to return. Use the parameter `callbackName` to identify the correct callback to invoke:
 
 ```java
-webView.evaluateJavascript("window.MediaKit_playDRMContentCallback(\"$requestID\", \"UNAVAILABLE\")") { _ -> }
+webView.evaluateJavascript("window[$callbackName](...)") { _ -> }
 ```
 
 ```swift
-webView.evaluateJavascript("window.MediaKit_playDRMContentCallback(\"\(requestID))\", \"UNAVAILABLE\"", nil)
+webView.evaluateJavascript("window[\(callbackName)](...)", nil)
 ```
 
-The name of the callback is always:
+The name of the callback always starts with:
 
 ```javascript
-[kitName]_[functionName]Callback
+[moduleName]_[functionName]Callback
 ```
 
 For e.g.:
@@ -57,4 +59,51 @@ AnalyticsModule.track -> AnalyticsModule_trackCallback
 MediaKit.playDRMContent -> MediaKit_playDRMContentCallback
 ```
 
-This callback style allows us to pass errors to the partner app that they can handle in case something goes wrong. The errors, if any, should be in a predefined format.
+This callback style allows us to pass errors to the partner app that they can handle in case something goes wrong.
+
+## Value streaming
+
+All module methods whose name starts with `stream_` are assumed to support streaming, e.g.:
+
+```javascript
+const subscription = MediaKit.stream_playDRMContent(...).subscribe({
+  onValue: console.log,
+  onComplete: console.log,
+});
+```
+
+Calling these methods returns `DataStream` objects that can be subscribed to with `StreamHandlers` (i.e. `onValue`, `onComplete` etc.). Once `subscribe` is called, a `Subscription` object is created to control when streaming should be terminated.
+
+Note that `DataStream` always creates new streams whenever `subscribe` is called, so there is no need to worry about invoking it multiple times. The concept of `DataStream` is similar to that of an `Observable`, and it certainly is easy to bridge the two:
+
+```javascript
+const playObservable = new Observable(sub => {
+  const subscription = MediaKit.stream_playDRMContent(...).subscribe({ 
+    onValue: data => sub.next(data),
+    onComplete: () => sub.complete(),
+  });
+
+  return () => subscription.unsubscribe();
+});
+
+playObservable.pipe(filter(...), map(...)).subscribe(...);
+```
+
+## Data format
+
+Callback results must be in the format prescribed below:
+
+```javascript
+type CallbackResult = Readonly<{
+  /** The result of the operation. */
+  result: unknown;
+
+  /** The error object, if any. */
+  error: unknown;
+
+  /** The status code. */
+  status_code: number;
+}>;
+```
+
+Make sure native code is passing data in the correct format, or else callbacks will not be invoked.
