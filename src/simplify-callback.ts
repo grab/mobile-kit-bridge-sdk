@@ -68,10 +68,7 @@ function streamCallback(
   { callbackName, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): Stream {
   return {
-    subscribe: (
-      onValue: (data: CallbackResult) => unknown,
-      onComplete?: () => unknown
-    ): Subscription => {
+    subscribe: ({ onValue, onComplete }): Subscription => {
       let subscription: Subscription;
       globalObject[callbackName] = (
         data: CallbackResult | StreamEventResult
