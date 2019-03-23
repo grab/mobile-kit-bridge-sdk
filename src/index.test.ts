@@ -1,6 +1,7 @@
 import bluebird from 'bluebird';
 import { IOSMethodParameter, wrapAndroidModule, wrapIOSModule } from './index';
-import { createMethodParameter } from './utils';
+import { StreamEvent } from './simplify-callback';
+import { CallbackResult, createMethodParameter } from './utils';
 
 function formatResult(param1: unknown, param2: unknown) {
   return `${param1}-${param2}`;
@@ -36,6 +37,11 @@ function createTestADRModule(globalObject: any) {
         }
       },                             interval);
     },
+    getSomethingWithTerminatingStream(timeout: number, callbackName: string) {
+      setTimeout(() => {
+        globalObject[callbackName]({ event: StreamEvent.STREAM_TERMINATED });
+      },         timeout);
+    },
     throwError(param: string, callbackName: string) {
       globalObject[callbackName]({
         result: null,
@@ -53,7 +59,10 @@ function createTestIOSModule(globalObject: any) {
       parameters,
       callbackName
     }: IOSMethodParameter<
-      'getSomething' | 'getSomethingStream' | 'throwError'
+      | 'getSomething'
+      | 'getSomethingStream'
+      | 'getSomethingWithTerminatingStream'
+      | 'throwError'
     >) => {
       switch (method) {
         case 'getSomething':
@@ -83,6 +92,18 @@ function createTestIOSModule(globalObject: any) {
               }
             },
             parameters.interval as number
+          );
+
+          break;
+
+        case 'getSomethingWithTerminatingStream':
+          setTimeout(
+            () => {
+              globalObject[callbackName]({
+                event: StreamEvent.STREAM_TERMINATED
+              });
+            },
+            parameters.timeout as number
           );
 
           break;
@@ -170,20 +191,53 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     // Setup
     const interval = 200;
     const timeout = 2100;
-    const streamedValues: string[] = [];
+    const streamTimeout = 1100;
+    const streamedValues: CallbackResult[] = [];
 
     // When
-    wrappedModule
+    const subscription = wrappedModule
       .invoke('getSomethingStream', createMethodParameter('interval', interval))
-      .subscribe((value: string) => streamedValues.push(value));
+      .subscribe((value: CallbackResult) => streamedValues.push(value));
 
     // Then
+    setTimeout(subscription.unsubscribe, streamTimeout);
+
     setTimeout(() => {
-      const length = (timeout - (timeout % interval)) / interval;
+      const length = (streamTimeout - (streamTimeout % interval)) / interval;
       expect(streamedValues).toHaveLength(length);
       expect([...new Set(streamedValues)]).toHaveLength(length);
       done();
-    },         2100);
+    },         timeout);
+  }
+
+  function test_moduleMethod_withTerminatingStream(
+    wrappedModule: any,
+    done: Function
+  ) {
+    // Setup
+    const streamTimeout = 500;
+    const timeout = 1000;
+    const streamedValues: CallbackResult[] = [];
+    let completed = false;
+
+    // When
+    const subscription = wrappedModule
+      .invoke(
+        'getSomethingWithTerminatingStream',
+        createMethodParameter('timeout', streamTimeout)
+      )
+      .subscribe(
+        (value: CallbackResult) => streamedValues.push(value),
+        () => (completed = true)
+      );
+
+    // Then
+    setTimeout(() => {
+      expect(streamedValues).toHaveLength(0);
+      expect(completed).toBeTruthy();
+      expect(subscription.isUnsubscribed()).toBeTruthy();
+      done();
+    },         timeout);
   }
 
   it('Should wrap Android method with normal return correctly', async () => {
@@ -214,6 +268,13 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     test_moduleMethod_withStream(wrapped, done);
   });
 
+  it('Should terminate stream for Android method call', done => {
+    const globalObject = {};
+    const adr = createTestADRModule(globalObject);
+    const wrapped = wrapAndroidModule(globalObject, 'TestADRModule', adr);
+    test_moduleMethod_withTerminatingStream(wrapped, done);
+  });
+
   it('Should wrap iOS method with normal return correctly', async () => {
     const globalObject = {};
     const ios = createTestIOSModule(globalObject);
@@ -240,5 +301,12 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const ios = createTestIOSModule(globalObject);
     const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
     test_moduleMethod_withStream(wrapped, done);
+  });
+
+  it('Should terminate stream for iOS method call', done => {
+    const globalObject = {};
+    const ios = createTestIOSModule(globalObject);
+    const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
+    test_moduleMethod_withTerminatingStream(wrapped, done);
   });
 });
