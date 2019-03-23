@@ -1,3 +1,4 @@
+import { Omit } from 'ts-essentials';
 import { simplifyCallback } from './simplify-callback';
 import {
   getCallbackName,
@@ -65,22 +66,19 @@ export function wrapAndroidModule<Module extends AndroidModule>(
     .map((key: keyof Module & string) => {
       let currentRequestID = 0;
 
-      const callbackNameFunc = (requestID: number | string | null) =>
-        getCallbackName({ moduleName, requestID, funcName: key });
+      const callbackNameFunc = () => {
+        const requestID = `${currentRequestID}`;
+        currentRequestID += 1;
+        return getCallbackName({ moduleName, requestID, funcName: key });
+      };
 
       return {
         [key]: (...methodParams: any[]) => {
-          const requestID = `${currentRequestID}`;
-          currentRequestID += 1;
-
           return simplifyCallback(globalObject, {
-            callbackName: callbackNameFunc(requestID),
+            callbackNameFunc,
             funcNameToWrap: key,
-            funcToWrap: moduleObj[key].bind(
-              moduleObj,
-              ...methodParams,
-              callbackNameFunc(requestID)
-            )
+            funcToWrap: callbackName =>
+              moduleObj[key].bind(moduleObj, ...methodParams, callbackName)
           });
         }
       };
@@ -115,26 +113,32 @@ export function wrapIOSModule<MethodKeys extends string>(
       method: MethodKey,
       ...methodParams: WrappedMethodParameter[]
     ) => {
-      const requestID = (methodRequestIDMap[method] || -1) + 1;
-      methodRequestIDMap[method] = requestID;
+      const callbackNameFunc = () => {
+        const requestID = methodRequestIDMap[method] || 0;
+        methodRequestIDMap[method] = requestID + 1;
+        return getCallbackName({ moduleName, requestID, funcName: method });
+      };
 
-      const callbackNameFunc = (requestID: number | string | null) =>
-        getCallbackName({ moduleName, requestID, funcName: method });
-
-      const nativeMethodParams: IOSMethodParameter<MethodKeys> = {
+      const nativeMethodParams: Omit<
+        IOSMethodParameter<MethodKeys>,
+        'callbackName'
+      > = {
         method,
         parameters: {
           ...methodParams
             .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
             .reduce((acc, item) => ({ ...acc, ...item }), {})
-        },
-        callbackName: callbackNameFunc(requestID)
+        }
       };
 
       return simplifyCallback(globalObject, {
-        callbackName: callbackNameFunc(requestID),
+        callbackNameFunc,
         funcNameToWrap: method,
-        funcToWrap: moduleObj.postMessage.bind(moduleObj, nativeMethodParams)
+        funcToWrap: callbackName =>
+          moduleObj.postMessage.bind(moduleObj, {
+            ...nativeMethodParams,
+            callbackName
+          })
       });
     }
   };

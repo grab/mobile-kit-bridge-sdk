@@ -7,10 +7,10 @@ type Params = Readonly<{
   funcNameToWrap: string;
 
   /** The method being wrapped. */
-  funcToWrap: Function;
+  funcToWrap: (callbackName: string) => () => unknown;
 
-  /** The name of the callback that will receive the results. */
-  callbackName: string;
+  /** Function to create the name of the callback that will receive results. */
+  callbackNameFunc: () => string;
 }>;
 
 /**
@@ -40,8 +40,10 @@ export type StreamEventResult = Readonly<{
  */
 function promisifyCallback(
   globalObject: any,
-  { callbackName, funcToWrap }: Omit<Params, 'funcNameToWrap'>
+  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): PromiseLike<any> {
+  const callbackName = callbackNameFunc();
+
   return new Promise(resolve => {
     globalObject[callbackName] = (data: CallbackResult) => {
       resolve(data);
@@ -53,7 +55,7 @@ function promisifyCallback(
       delete globalObject[callbackName];
     };
 
-    funcToWrap();
+    funcToWrap(callbackName)();
   });
 }
 
@@ -65,11 +67,14 @@ function promisifyCallback(
  */
 function streamCallback(
   globalObject: any,
-  { callbackName, funcToWrap }: Omit<Params, 'funcNameToWrap'>
+  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): Stream {
   return {
     subscribe: ({ onValue, onComplete }): Subscription => {
+      /** Generate callback name dynamically to make this stream idempotent. */
+      const callbackName = callbackNameFunc();
       let subscription: Subscription;
+
       globalObject[callbackName] = (
         data: CallbackResult | StreamEventResult
       ) => {
@@ -84,7 +89,7 @@ function streamCallback(
         }
       };
 
-      funcToWrap();
+      funcToWrap(callbackName)();
 
       subscription = createSubscription(() => {
         /**
