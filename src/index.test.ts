@@ -1,7 +1,8 @@
 import bluebird from 'bluebird';
-import { IOSMethodParameter, wrapAndroidModule, wrapIOSModule } from './index';
 import { StreamEvent } from './simplify-callback';
 import { CallbackResult, createMethodParameter } from './utils';
+import { wrapAndroidModule } from './wrap-android';
+import { IOSMethodParameter, wrapIOSModule } from './wrap-ios';
 
 function formatResult(param1: unknown, param2: unknown) {
   return `${param1}-${param2}`;
