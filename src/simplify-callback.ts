@@ -1,4 +1,4 @@
-import { createSubscription, Stream, Subscription } from './subscription';
+import { createSubscription, DataStream, Subscription } from './subscription';
 import { CallbackResult, isStreamFunction, isType, Omit } from './utils';
 
 type Params = Readonly<{
@@ -67,7 +67,7 @@ function promisifyCallback(
 function streamCallback(
   globalObject: any,
   { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
-): Stream {
+): DataStream {
   return {
     subscribe: ({ onValue, onComplete }): Subscription => {
       /** Generate callback name dynamically to make this stream idempotent. */
