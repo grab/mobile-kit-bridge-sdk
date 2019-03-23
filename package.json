@@ -19,7 +19,6 @@
     "jest": "^24.5.0",
     "prettier-tslint": "^0.4.2",
     "rollup": "^1.7.0",
-    "ts-essentials": "^2.0.3",
     "ts-jest": "^24.0.0",
     "ts-lint": "^4.5.1",
     "tslint-config-airbnb": "^5.11.1",

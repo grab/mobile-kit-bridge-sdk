@@ -1,6 +1,5 @@
-import { Omit } from 'ts-essentials';
 import { createSubscription, Stream, Subscription } from './subscription';
-import { CallbackResult, isStreamFunction, isType } from './utils';
+import { CallbackResult, isStreamFunction, isType, Omit } from './utils';
 
 type Params = Readonly<{
   /** The name of the function to be wrapped. */

@@ -1,12 +1,11 @@
-import { Omit } from 'ts-essentials';
 import { simplifyCallback } from './simplify-callback';
 import {
   getCallbackName,
   getObjectKeys,
-  WrappedMethodParameter
+  WrappedMethodParameter,
+  StringKeys,
+  Omit
 } from './utils';
-
-type StringKeys<T> = Extract<keyof T, string>;
 
 /** Represents an Android module. */
 type AndroidModule = Readonly<{

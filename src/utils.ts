@@ -1,3 +1,6 @@
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+export type StringKeys<T> = Extract<keyof T, string>;
+
 export type CallbackResult = Readonly<{
   /** The result of the operation. */
   result: unknown;
@@ -78,10 +81,10 @@ export function createMethodParameter(
  * @param object Some object.
  * @return Whether the object is of this type.
  */
-export function isType<
-  T,
-  K extends Extract<keyof T, string> = Extract<keyof T, string>
->(object: unknown, ...keys: K[]): object is T {
+export function isType<T, K extends StringKeys<T> = StringKeys<T>>(
+  object: unknown,
+  ...keys: K[]
+): object is T {
   const objectKeys = getObjectKeys(object);
   return keys.every(key => objectKeys.indexOf(key) >= 0);
 }
