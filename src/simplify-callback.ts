@@ -78,7 +78,7 @@ function streamCallback(
         data: CallbackResult | StreamEventResult
       ) => {
         if (isType<CallbackResult>(data, 'result', 'error', 'status_code')) {
-          handlers && handlers.onValue && handlers.onValue(data);
+          handlers && handlers.next && handlers.next(data);
         } else {
           switch (data.event) {
             case StreamEvent.STREAM_TERMINATED:
@@ -98,7 +98,7 @@ function streamCallback(
          * therefore the stream may be terminated on the mobile side.
          */
         delete globalObject[callbackName];
-        handlers && handlers.onComplete && handlers.onComplete();
+        handlers && handlers.complete && handlers.complete();
       });
 
       return subscription;

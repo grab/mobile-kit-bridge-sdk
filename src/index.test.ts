@@ -202,7 +202,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
         createMethodParameter('interval', interval)
       )
       .subscribe({
-        onValue: (value: CallbackResult) => streamedValues.push(value)
+        next: (value: CallbackResult) => streamedValues.push(value)
       });
 
     // Then
@@ -233,8 +233,8 @@ describe('Module wrappers should wrap platform modules correctly', () => {
         createMethodParameter('timeout', streamTimeout)
       )
       .subscribe({
-        onValue: (value: CallbackResult) => streamedValues.push(value),
-        onComplete: () => (completed = true)
+        next: (value: CallbackResult) => streamedValues.push(value),
+        complete: () => (completed = true)
       });
 
     // Then
@@ -260,7 +260,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscriptions = [...Array(iterations)].map(() =>
-      stream.subscribe({ onValue: console.log })
+      stream.subscribe({ next: console.log })
     );
 
     // Then

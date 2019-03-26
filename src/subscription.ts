@@ -8,8 +8,8 @@ export type Subscription = Readonly<{
 
 /** Represents functions that can handle stream events. */
 export type DataStreamHandlers = Readonly<{
-  onValue?: (data: CallbackResult) => unknown;
-  onComplete?: () => unknown;
+  next?: (data: CallbackResult) => unknown;
+  complete?: () => unknown;
 }>;
 
 /** Represents a Stream that can deliver some data continually */

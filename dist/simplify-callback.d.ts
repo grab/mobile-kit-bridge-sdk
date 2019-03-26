@@ -29,12 +29,12 @@ export declare type StreamEventResult = Readonly<{
  */
 export declare function simplifyCallback(globalObject: any, { funcNameToWrap, ...restParams }: Params): PromiseLike<any> | Readonly<{
     subscribe: (handlers?: Readonly<{
-        onValue?: ((data: Readonly<{
+        next?: ((data: Readonly<{
             result: unknown;
             error: unknown;
             status_code: number;
         }>) => unknown) | undefined;
-        onComplete?: (() => unknown) | undefined;
+        complete?: (() => unknown) | undefined;
     }> | undefined) => Readonly<{
         isUnsubscribed: () => boolean;
         unsubscribe: () => unknown;
