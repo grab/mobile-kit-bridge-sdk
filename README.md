@@ -63,12 +63,12 @@ This callback style allows us to pass errors to the partner app that they can ha
 
 ## Value streaming
 
-All module methods whose name starts with `stream_` are assumed to support streaming, e.g.:
+All module methods whose name starts with `observe` are assumed to support streaming, e.g.:
 
 ```javascript
-const subscription = MediaKit.stream_playDRMContent(...).subscribe({
-  onValue: console.log,
-  onComplete: console.log,
+const subscription = MediaKit.observePlayDRMContent(...).subscribe({
+  next: console.log,
+  complete: console.log,
 });
 ```
 
@@ -78,9 +78,9 @@ Note that `DataStream` always creates new streams whenever `subscribe` is called
 
 ```javascript
 const playObservable = new Observable(sub => {
-  const subscription = MediaKit.stream_playDRMContent(...).subscribe({ 
-    onValue: data => sub.next(data),
-    onComplete: () => sub.complete(),
+  const subscription = MediaKit.observePlayDRMContent(...).subscribe({ 
+    next: data => sub.next(data),
+    complete: () => sub.complete(),
   });
 
   return () => subscription.unsubscribe();

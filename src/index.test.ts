@@ -21,7 +21,7 @@ function createTestADRModule(globalObject: any) {
         status_code: 200
       });
     },
-    stream_getSomething(interval: number, callbackName: string) {
+    observeGetSomething(interval: number, callbackName: string) {
       let count = 0;
 
       const intervalID = setInterval(() => {
@@ -38,7 +38,7 @@ function createTestADRModule(globalObject: any) {
         }
       },                             interval);
     },
-    stream_getSomethingWithTerminate(timeout: number, callbackName: string) {
+    observeGetSomethingWithTerminate(timeout: number, callbackName: string) {
       setTimeout(() => {
         globalObject[callbackName]({ event: StreamEvent.STREAM_TERMINATED });
       },         timeout);
@@ -61,8 +61,8 @@ function createTestIOSModule(globalObject: any) {
       callbackName
     }: IOSMethodParameter<
       | 'getSomething'
-      | 'stream_getSomething'
-      | 'stream_getSomethingWithTerminate'
+      | 'observeGetSomething'
+      | 'observeGetSomethingWithTerminate'
       | 'throwError'
     >) => {
       switch (method) {
@@ -75,7 +75,7 @@ function createTestIOSModule(globalObject: any) {
 
           break;
 
-        case 'stream_getSomething':
+        case 'observeGetSomething':
           let count = 0;
 
           const intervalID = setInterval(
@@ -97,7 +97,7 @@ function createTestIOSModule(globalObject: any) {
 
           break;
 
-        case 'stream_getSomethingWithTerminate':
+        case 'observeGetSomethingWithTerminate':
           setTimeout(
             () => {
               globalObject[callbackName]({
@@ -198,7 +198,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     // When
     const subscription = wrappedModule
       .invoke(
-        'stream_getSomething',
+        'observeGetSomething',
         createMethodParameter('interval', interval)
       )
       .subscribe({
@@ -229,7 +229,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     // When
     const subscription = wrappedModule
       .invoke(
-        'stream_getSomethingWithTerminate',
+        'observeGetSomethingWithTerminate',
         createMethodParameter('timeout', streamTimeout)
       )
       .subscribe({
@@ -254,7 +254,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const iterations = 1000;
 
     const stream = wrappedModule.invoke(
-      'stream_getSomething',
+      'observeGetSomething',
       createMethodParameter('param', 1)
     );
 

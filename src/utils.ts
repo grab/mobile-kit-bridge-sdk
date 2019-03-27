@@ -38,7 +38,7 @@ export function getObjectKeys<T>(object: T) {
  * @param funcName The name of the function.
  */
 export function isStreamFunction(funcName: string) {
-  return funcName.toLowerCase().startsWith('stream_');
+  return funcName.toLowerCase().startsWith('observe');
 }
 
 /**
