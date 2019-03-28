@@ -36,12 +36,12 @@ function createTestADRModule(globalObject: any) {
         } else {
           clearInterval(intervalID);
         }
-      },                             interval);
+      }, interval);
     },
     observeGetSomethingWithTerminate(timeout: number, callbackName: string) {
       setTimeout(() => {
         globalObject[callbackName]({ event: StreamEvent.STREAM_TERMINATED });
-      },         timeout);
+      }, timeout);
     },
     throwError(param: string, callbackName: string) {
       globalObject[callbackName]({
@@ -58,7 +58,7 @@ function createTestIOSModule(globalObject: any) {
     postMessage: ({
       method,
       parameters,
-      callbackName
+      callback
     }: IOSMethodParameter<
       | 'getSomething'
       | 'observeGetSomething'
@@ -67,7 +67,7 @@ function createTestIOSModule(globalObject: any) {
     >) => {
       switch (method) {
         case 'getSomething':
-          globalObject[callbackName]({
+          globalObject[callback]({
             result: formatResult(parameters.param1, parameters.param2),
             error: null,
             status_code: 200
@@ -80,8 +80,8 @@ function createTestIOSModule(globalObject: any) {
 
           const intervalID = setInterval(
             () => {
-              if (globalObject[callbackName]) {
-                globalObject[callbackName]({
+              if (globalObject[callback]) {
+                globalObject[callback]({
                   result: count,
                   error: null,
                   status_code: 200
@@ -100,7 +100,7 @@ function createTestIOSModule(globalObject: any) {
         case 'observeGetSomethingWithTerminate':
           setTimeout(
             () => {
-              globalObject[callbackName]({
+              globalObject[callback]({
                 event: StreamEvent.STREAM_TERMINATED
               });
             },
@@ -110,7 +110,7 @@ function createTestIOSModule(globalObject: any) {
           break;
 
         case 'throwError':
-          globalObject[callbackName]({
+          globalObject[callback]({
             result: null,
             error: { message: formatError(parameters.param) },
             status_code: 404
@@ -213,7 +213,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       expect(streamedValues).toHaveLength(length);
       expect([...new Set(streamedValues)]).toHaveLength(length);
       done();
-    },         timeout);
+    }, timeout);
   }
 
   function test_moduleMethod_withTerminatingStream(
@@ -243,7 +243,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       expect(completed).toBeTruthy();
       expect(subscription.isUnsubscribed()).toBeTruthy();
       done();
-    },         timeout);
+    }, timeout);
   }
 
   async function test_moduleMethodStream_shouldBeIdempotent(

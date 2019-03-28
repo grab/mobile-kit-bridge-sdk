@@ -23,7 +23,7 @@ export type IOSMethodParameter<MethodKeys extends string> = Readonly<{
   parameters: Readonly<{ [K: string]: unknown }>;
 
   /** The name of the callback. */
-  callbackName: string;
+  callback: string;
 }>;
 
 /**
@@ -51,10 +51,7 @@ export function wrapIOSModule<MethodKeys extends string>(
         return getCallbackName({ moduleName, requestID, funcName: method });
       };
 
-      const nativeMethodParams: Omit<
-        IOSMethodParameter<MethodKeys>,
-        'callbackName'
-      > = {
+      const nativeParams: Omit<IOSMethodParameter<MethodKeys>, 'callback'> = {
         method,
         parameters: {
           ...methodParams
@@ -66,11 +63,8 @@ export function wrapIOSModule<MethodKeys extends string>(
       return simplifyCallback(globalObject, {
         callbackNameFunc,
         funcNameToWrap: method,
-        funcToWrap: callbackName =>
-          moduleObj.postMessage.bind(moduleObj, {
-            ...nativeMethodParams,
-            callbackName
-          })
+        funcToWrap: callback =>
+          moduleObj.postMessage.bind(moduleObj, { callback, ...nativeParams })
       });
     }
   };
