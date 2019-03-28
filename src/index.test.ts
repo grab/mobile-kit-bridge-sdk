@@ -1,7 +1,7 @@
 import bluebird from 'bluebird';
 import { StreamEvent } from './simplify-callback';
 import { CallbackResult, createMethodParameter } from './utils';
-import { wrapAndroidModule } from './wrap-android';
+import { AndroidMethodParameter, wrapAndroidModule } from './wrap-android';
 import { IOSMethodParameter, wrapIOSModule } from './wrap-ios';
 
 function formatResult(param1: unknown, param2: unknown) {
@@ -14,19 +14,25 @@ function formatError(param: unknown) {
 
 function createTestADRModule(globalObject: any) {
   return {
-    getSomething(param1: string, param2: string, callbackName: string) {
-      globalObject[callbackName]({
+    getSomething({
+      parameters: { param1, param2 },
+      callback
+    }: AndroidMethodParameter<Readonly<{ param1: string; param2: string }>>) {
+      globalObject[callback]({
         result: formatResult(param1, param2),
         error: null,
         status_code: 200
       });
     },
-    observeGetSomething(interval: number, callbackName: string) {
+    observeGetSomething({
+      parameters: { interval },
+      callback
+    }: AndroidMethodParameter<Readonly<{ interval: number }>>) {
       let count = 0;
 
       const intervalID = setInterval(() => {
-        if (globalObject[callbackName]) {
-          globalObject[callbackName]({
+        if (globalObject[callback]) {
+          globalObject[callback]({
             result: count,
             error: null,
             status_code: 200
@@ -36,15 +42,21 @@ function createTestADRModule(globalObject: any) {
         } else {
           clearInterval(intervalID);
         }
-      }, interval);
+      },                             interval);
     },
-    observeGetSomethingWithTerminate(timeout: number, callbackName: string) {
+    observeGetSomethingWithTerminate({
+      parameters: { timeout },
+      callback
+    }: AndroidMethodParameter<Readonly<{ timeout: number }>>) {
       setTimeout(() => {
-        globalObject[callbackName]({ event: StreamEvent.STREAM_TERMINATED });
-      }, timeout);
+        globalObject[callback]({ event: StreamEvent.STREAM_TERMINATED });
+      },         timeout);
     },
-    throwError(param: string, callbackName: string) {
-      globalObject[callbackName]({
+    throwError({
+      parameters: { param },
+      callback
+    }: AndroidMethodParameter<Readonly<{ param: string }>>) {
+      globalObject[callback]({
         result: null,
         error: { message: formatError(param) },
         status_code: 404
@@ -213,7 +225,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       expect(streamedValues).toHaveLength(length);
       expect([...new Set(streamedValues)]).toHaveLength(length);
       done();
-    }, timeout);
+    },         timeout);
   }
 
   function test_moduleMethod_withTerminatingStream(
@@ -243,7 +255,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       expect(completed).toBeTruthy();
       expect(subscription.isUnsubscribed()).toBeTruthy();
       done();
-    }, timeout);
+    },         timeout);
   }
 
   async function test_moduleMethodStream_shouldBeIdempotent(

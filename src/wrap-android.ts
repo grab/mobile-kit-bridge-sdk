@@ -6,9 +6,21 @@ import {
   WrappedMethodParameter
 } from './utils';
 
+/** Android method parameters  */
+export type AndroidMethodParameter<Params> = Readonly<{
+  /** The method name. */
+  method: string;
+
+  /** The method parameters. */
+  parameters: Params;
+
+  /** The name of the callback. */
+  callback: string;
+}>;
+
 /** Represents an Android module. */
 type AndroidModule = Readonly<{
-  [K: string]: (...params: any[]) => unknown;
+  [K: string]: (params: AndroidMethodParameter<any>) => unknown;
 }>;
 
 /**
@@ -46,12 +58,16 @@ export function wrapAndroidModule<Module extends AndroidModule>(
       };
 
       return {
-        [key]: (...methodParams: any[]) => {
+        [key]: (params: AndroidMethodParameter<any>['parameters']) => {
           return simplifyCallback(globalObject, {
             callbackNameFunc,
             funcNameToWrap: key,
-            funcToWrap: callbackName =>
-              moduleObj[key].bind(moduleObj, ...methodParams, callbackName)
+            funcToWrap: callback =>
+              moduleObj[key].bind(moduleObj, {
+                callback,
+                method: key,
+                parameters: params
+              })
           });
         }
       };
@@ -61,8 +77,12 @@ export function wrapAndroidModule<Module extends AndroidModule>(
   return {
     invoke: <MethodKey extends StringKeys<Module>>(
       method: MethodKey,
-      ...methodParams: WrappedMethodParameter[]
+      ...params: WrappedMethodParameter[]
     ) =>
-      wrappedModule[method](...methodParams.map(({ paramValue }) => paramValue))
+      wrappedModule[method](
+        params
+          .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
+          .reduce((acc, item) => ({ ...acc, ...item }))
+      )
   };
 }

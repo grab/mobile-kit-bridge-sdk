@@ -1,5 +1,5 @@
 import { simplifyCallback } from './simplify-callback';
-import { getCallbackName, Omit, WrappedMethodParameter } from './utils';
+import { getCallbackName, WrappedMethodParameter } from './utils';
 
 /** Represents an iOS module. */
 type IOSModule<MethodKeys extends string> = Readonly<{
@@ -43,28 +43,27 @@ export function wrapIOSModule<MethodKeys extends string>(
   return {
     invoke: <MethodKey extends MethodKeys>(
       method: MethodKey,
-      ...methodParams: WrappedMethodParameter[]
+      ...params: WrappedMethodParameter[]
     ) => {
-      const callbackNameFunc = () => {
-        const requestID = methodRequestIDMap[method] || 0;
-        methodRequestIDMap[method] = requestID + 1;
-        return getCallbackName({ moduleName, requestID, funcName: method });
-      };
-
-      const nativeParams: Omit<IOSMethodParameter<MethodKeys>, 'callback'> = {
-        method,
-        parameters: {
-          ...methodParams
-            .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
-            .reduce((acc, item) => ({ ...acc, ...item }), {})
-        }
-      };
-
       return simplifyCallback(globalObject, {
-        callbackNameFunc,
         funcNameToWrap: method,
+        callbackNameFunc: () => {
+          const requestID = methodRequestIDMap[method] || 0;
+          methodRequestIDMap[method] = requestID + 1;
+          return getCallbackName({ moduleName, requestID, funcName: method });
+        },
         funcToWrap: callback =>
-          moduleObj.postMessage.bind(moduleObj, { callback, ...nativeParams })
+          moduleObj.postMessage.bind(moduleObj, {
+            callback,
+            method,
+            parameters: {
+              ...params
+                .map(({ paramName, paramValue }) => ({
+                  [paramName]: paramValue
+                }))
+                .reduce((acc, item) => ({ ...acc, ...item }), {})
+            }
+          })
       });
     }
   };
