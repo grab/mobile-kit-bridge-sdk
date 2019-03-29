@@ -4,11 +4,12 @@ const gulp = require('gulp');
 const { sync } = require('del');
 const bundle = require('@lernetz/gulp-typescript-bundle');
 
-const srcPaths = {
+const paths = {
   config: ['tsconfig.json'],
   src: ['src/**/*', '!src/*.test.*']
 };
 
+const src = 'src/index.ts';
 const dest = 'dist';
 
 gulp.task('clean:dist', async function() {
@@ -19,7 +20,7 @@ gulp.task(
   'ts:bundle',
   bundle({
     dest,
-    src: 'src/index.ts',
+    src,
     name: 'index',
     rollup: {
       outputOptions: { compact: false, format: 'cjs', sourcemap: false }
@@ -31,8 +32,8 @@ gulp.task(
   'ts:bundle:umd',
   bundle({
     dest,
-    src: 'src/index.ts',
-    name: 'index.umd',
+    src,
+    name: 'bridgeSDK',
     rollup: { outputOptions: { format: 'umd', sourcemap: false } }
   })
 );
@@ -42,10 +43,7 @@ const distSequence = ['clean:dist', 'ts:bundle', 'ts:bundle:umd'];
 gulp.task('ts:distribution', gulp.series(...distSequence));
 
 gulp.task('watch:src', function() {
-  gulp.watch(
-    [...srcPaths.src, ...srcPaths.config],
-    gulp.series('ts:distribution')
-  );
+  gulp.watch([...paths.src, ...paths.config], gulp.series('ts:distribution'));
 });
 
 gulp.task('watch', gulp.parallel('watch:src'));
