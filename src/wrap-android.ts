@@ -1,10 +1,5 @@
 import { simplifyCallback } from './simplify-callback';
-import {
-  getCallbackName,
-  getObjectKeys,
-  StringKeys,
-  WrappedMethodParameter
-} from './utils';
+import { getCallbackName, getObjectKeys, StringKeys } from './utils';
 
 /** Android method parameters  */
 export type AndroidMethodParameter<Params> = Readonly<{
@@ -30,7 +25,7 @@ type AndroidModule = Readonly<{
 type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
   invoke: <MethodKey extends StringKeys<Original>>(
     method: MethodKey,
-    ...params: WrappedMethodParameter[]
+    params: Parameters<Original[MethodKey]>[0]['parameters']
   ) => unknown;
 }>;
 
@@ -75,14 +70,6 @@ export function wrapAndroidModule<Module extends AndroidModule>(
     .reduce((acc, item) => ({ ...acc, ...item }), {});
 
   return {
-    invoke: <MethodKey extends StringKeys<Module>>(
-      method: MethodKey,
-      ...params: WrappedMethodParameter[]
-    ) =>
-      wrappedModule[method](
-        params
-          .map(({ paramName, paramValue }) => ({ [paramName]: paramValue }))
-          .reduce((acc, item) => ({ ...acc, ...item }))
-      )
+    invoke: (method, params) => wrappedModule[method](params)
   };
 }

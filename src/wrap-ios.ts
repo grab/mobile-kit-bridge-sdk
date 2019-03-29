@@ -1,5 +1,5 @@
 import { simplifyCallback } from './simplify-callback';
-import { getCallbackName, WrappedMethodParameter } from './utils';
+import { getCallbackName } from './utils';
 
 /** Represents an iOS module. */
 type IOSModule<MethodKeys extends string> = Readonly<{
@@ -10,7 +10,7 @@ type IOSModule<MethodKeys extends string> = Readonly<{
 type WrappedIOSModule<MethodKeys extends string> = Readonly<{
   invoke: <MethodKey extends MethodKeys>(
     method: MethodKey,
-    ...params: WrappedMethodParameter[]
+    params: IOSMethodParameter<MethodKeys>['parameters']
   ) => unknown;
 }>;
 
@@ -41,10 +41,7 @@ export function wrapIOSModule<MethodKeys extends string>(
   const methodRequestIDMap: { [K: string]: number } = {};
 
   return {
-    invoke: <MethodKey extends MethodKeys>(
-      method: MethodKey,
-      ...params: WrappedMethodParameter[]
-    ) => {
+    invoke: (method, params) => {
       return simplifyCallback(globalObject, {
         funcNameToWrap: method,
         callbackNameFunc: () => {
@@ -56,13 +53,7 @@ export function wrapIOSModule<MethodKeys extends string>(
           moduleObj.postMessage.bind(moduleObj, {
             callback,
             method,
-            parameters: {
-              ...params
-                .map(({ paramName, paramValue }) => ({
-                  [paramName]: paramValue
-                }))
-                .reduce((acc, item) => ({ ...acc, ...item }), {})
-            }
+            parameters: params
           })
       });
     }

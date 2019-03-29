@@ -1,14 +1,23 @@
-import { StringKeys, WrappedMethodParameter } from './utils';
+import { StringKeys } from './utils';
+/** Android method parameters  */
+export declare type AndroidMethodParameter<Params> = Readonly<{
+    /** The method name. */
+    method: string;
+    /** The method parameters. */
+    parameters: Params;
+    /** The name of the callback. */
+    callback: string;
+}>;
 /** Represents an Android module. */
 declare type AndroidModule = Readonly<{
-    [K: string]: (...params: any[]) => unknown;
+    [K: string]: (params: AndroidMethodParameter<any>) => unknown;
 }>;
 /**
  * Represents a wrapped Android module. Each method in the original module is
  * mapped to a method key along with its actual parameters.
  */
 declare type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
-    invoke: <MethodKey extends StringKeys<Original>>(method: MethodKey, ...params: WrappedMethodParameter[]) => unknown;
+    invoke: <MethodKey extends StringKeys<Original>>(method: MethodKey, params: Parameters<Original[MethodKey]>[0]['parameters']) => unknown;
 }>;
 /**
  * Wrap an Android module.

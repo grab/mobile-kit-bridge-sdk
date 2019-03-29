@@ -12,15 +12,6 @@ export type CallbackResult = Readonly<{
   status_code: number;
 }>;
 
-/** Method parameters for cross-platform usage. */
-export type WrappedMethodParameter = Readonly<{
-  /** The name of the parameter. */
-  paramName: string;
-
-  /** The parameter value. */
-  paramValue: unknown;
-}>;
-
 /**
  * Get the keys of an object.
  * @param object Some object.
@@ -61,19 +52,6 @@ export function getCallbackName({
   requestID: number | string | null;
 }>): string {
   return `${moduleName}_${funcName}Callback${req !== null ? `_${req}` : ''}`;
-}
-
-/**
- * Create a parameter object to work with both Android and iOS module wrappers.
- * @param paramName The parameter name.
- * @param paramValue The parameter value.
- * @return A Parameter object.
- */
-export function createMethodParameter(
-  paramName: WrappedMethodParameter['paramName'],
-  paramValue: WrappedMethodParameter['paramValue']
-): WrappedMethodParameter {
-  return { paramName, paramValue };
 }
 
 /**

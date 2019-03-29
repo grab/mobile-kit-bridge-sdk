@@ -1,11 +1,10 @@
-import { WrappedMethodParameter } from './utils';
 /** Represents an iOS module. */
 declare type IOSModule<MethodKeys extends string> = Readonly<{
     postMessage: (params: IOSMethodParameter<MethodKeys>) => unknown;
 }>;
 /** Represents a wrapped IOS module. */
 declare type WrappedIOSModule<MethodKeys extends string> = Readonly<{
-    invoke: <MethodKey extends MethodKeys>(method: MethodKey, ...params: WrappedMethodParameter[]) => unknown;
+    invoke: <MethodKey extends MethodKeys>(method: MethodKey, params: IOSMethodParameter<MethodKeys>['parameters']) => unknown;
 }>;
 /** Method parameters for iOS. */
 export declare type IOSMethodParameter<MethodKeys extends string> = Readonly<{
@@ -16,7 +15,7 @@ export declare type IOSMethodParameter<MethodKeys extends string> = Readonly<{
         [K: string]: unknown;
     }>;
     /** The name of the callback. */
-    callbackName: string;
+    callback: string;
 }>;
 /**
  * Wrap an iOS module.

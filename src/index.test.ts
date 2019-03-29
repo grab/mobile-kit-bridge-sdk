@@ -1,6 +1,6 @@
 import bluebird from 'bluebird';
 import { StreamEvent } from './simplify-callback';
-import { CallbackResult, createMethodParameter } from './utils';
+import { CallbackResult } from './utils';
 import { AndroidMethodParameter, wrapAndroidModule } from './wrap-android';
 import { IOSMethodParameter, wrapIOSModule } from './wrap-ios';
 
@@ -141,11 +141,10 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const param2 = '2';
 
     // When
-    const result = await wrappedModule.invoke(
-      'getSomething',
-      createMethodParameter('param1', param1),
-      createMethodParameter('param2', param2)
-    );
+    const result = await wrappedModule.invoke('getSomething', {
+      param1,
+      param2
+    });
 
     // Then
     expect(result).toEqual({
@@ -160,10 +159,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const param = '1';
 
     // When
-    const result = await wrappedModule.invoke(
-      'throwError',
-      createMethodParameter('param', param)
-    );
+    const result = await wrappedModule.invoke('throwError', { param });
 
     // Then
     expect(result).toEqual({
@@ -188,11 +184,10 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const results = await bluebird.map([...Array(rounds).keys()], v =>
-      wrappedModule.invoke(
-        'getSomething',
-        createMethodParameter('param1', `${v}`),
-        createMethodParameter('param2', `${v + 1}`)
-      )
+      wrappedModule.invoke('getSomething', {
+        param1: `${v}`,
+        param2: `${v + 1}`
+      })
     );
 
     // Then
@@ -205,25 +200,20 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const interval = 200;
     const timeout = 2100;
     const streamTimeout = 1100;
-    const streamedValues: CallbackResult[] = [];
+    const streamedVals: CallbackResult[] = [];
 
     // When
     const subscription = wrappedModule
-      .invoke(
-        'observeGetSomething',
-        createMethodParameter('interval', interval)
-      )
-      .subscribe({
-        next: (value: CallbackResult) => streamedValues.push(value)
-      });
+      .invoke('observeGetSomething', { interval })
+      .subscribe({ next: (value: CallbackResult) => streamedVals.push(value) });
 
     // Then
     setTimeout(subscription.unsubscribe, streamTimeout);
 
     setTimeout(() => {
       const length = (streamTimeout - (streamTimeout % interval)) / interval;
-      expect(streamedValues).toHaveLength(length);
-      expect([...new Set(streamedValues)]).toHaveLength(length);
+      expect(streamedVals).toHaveLength(length);
+      expect([...new Set(streamedVals)]).toHaveLength(length);
       done();
     },         timeout);
   }
@@ -240,10 +230,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscription = wrappedModule
-      .invoke(
-        'observeGetSomethingWithTerminate',
-        createMethodParameter('timeout', streamTimeout)
-      )
+      .invoke('observeGetSomethingWithTerminate', { timeout: streamTimeout })
       .subscribe({
         next: (value: CallbackResult) => streamedValues.push(value),
         complete: () => (completed = true)
@@ -265,10 +252,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     // Setup
     const iterations = 1000;
 
-    const stream = wrappedModule.invoke(
-      'observeGetSomething',
-      createMethodParameter('param', 1)
-    );
+    const stream = wrappedModule.invoke('observeGetSomething', { param: 1 });
 
     // When
     const subscriptions = [...Array(iterations)].map(() =>
