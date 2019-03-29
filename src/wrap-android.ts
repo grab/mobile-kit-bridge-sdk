@@ -1,17 +1,13 @@
 import { simplifyCallback } from './simplify-callback';
-import { getCallbackName, getObjectKeys, StringKeys } from './utils';
+import {
+  getCallbackName,
+  getObjectKeys,
+  StringKeys,
+  NativeParameter
+} from './utils';
 
 /** Android method parameters  */
-export type AndroidMethodParameter<Params> = Readonly<{
-  /** The method name. */
-  method: string;
-
-  /** The method parameters. */
-  parameters: Params;
-
-  /** The name of the callback. */
-  callback: string;
-}>;
+export type AndroidMethodParameter<Params> = NativeParameter<string, Params>;
 
 /** Represents an Android module. */
 type AndroidModule = Readonly<{

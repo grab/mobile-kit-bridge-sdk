@@ -1,5 +1,14 @@
 export declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export declare type StringKeys<T> = Extract<keyof T, string>;
+/** Method parameters for native methods. */
+export declare type NativeParameter<MethodKey, Params> = Readonly<{
+    /** The method name. */
+    method: MethodKey;
+    /** The method parameters. */
+    parameters: Params;
+    /** The name of the callback. */
+    callback: string;
+}>;
 export declare type CallbackResult = Readonly<{
     /** The result of the operation. */
     result: unknown;

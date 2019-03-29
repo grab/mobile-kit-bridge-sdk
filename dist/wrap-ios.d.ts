@@ -1,3 +1,8 @@
+import { NativeParameter } from './utils';
+/** Method parameters for iOS. */
+export declare type IOSMethodParameter<MethodKey, Params = Readonly<{
+    [K: string]: unknown;
+}>> = NativeParameter<MethodKey, Params>;
 /** Represents an iOS module. */
 declare type IOSModule<MethodKeys extends string> = Readonly<{
     postMessage: (params: IOSMethodParameter<MethodKeys>) => unknown;
@@ -5,17 +10,6 @@ declare type IOSModule<MethodKeys extends string> = Readonly<{
 /** Represents a wrapped IOS module. */
 declare type WrappedIOSModule<MethodKeys extends string> = Readonly<{
     invoke: <MethodKey extends MethodKeys>(method: MethodKey, params: IOSMethodParameter<MethodKeys>['parameters']) => unknown;
-}>;
-/** Method parameters for iOS. */
-export declare type IOSMethodParameter<MethodKeys extends string> = Readonly<{
-    /** The method name. */
-    method: MethodKeys;
-    /** The method parameters. */
-    parameters: Readonly<{
-        [K: string]: unknown;
-    }>;
-    /** The name of the callback. */
-    callback: string;
 }>;
 /**
  * Wrap an iOS module.

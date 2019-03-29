@@ -1,5 +1,11 @@
 import { simplifyCallback } from './simplify-callback';
-import { getCallbackName } from './utils';
+import { getCallbackName, NativeParameter } from './utils';
+
+/** Method parameters for iOS. */
+export type IOSMethodParameter<
+  MethodKey,
+  Params = Readonly<{ [K: string]: unknown }>
+> = NativeParameter<MethodKey, Params>;
 
 /** Represents an iOS module. */
 type IOSModule<MethodKeys extends string> = Readonly<{
@@ -12,18 +18,6 @@ type WrappedIOSModule<MethodKeys extends string> = Readonly<{
     method: MethodKey,
     params: IOSMethodParameter<MethodKeys>['parameters']
   ) => unknown;
-}>;
-
-/** Method parameters for iOS. */
-export type IOSMethodParameter<MethodKeys extends string> = Readonly<{
-  /** The method name. */
-  method: MethodKeys;
-
-  /** The method parameters. */
-  parameters: Readonly<{ [K: string]: unknown }>;
-
-  /** The name of the callback. */
-  callback: string;
 }>;
 
 /**

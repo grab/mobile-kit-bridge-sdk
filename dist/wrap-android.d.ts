@@ -1,13 +1,6 @@
-import { StringKeys } from './utils';
+import { StringKeys, NativeParameter } from './utils';
 /** Android method parameters  */
-export declare type AndroidMethodParameter<Params> = Readonly<{
-    /** The method name. */
-    method: string;
-    /** The method parameters. */
-    parameters: Params;
-    /** The name of the callback. */
-    callback: string;
-}>;
+export declare type AndroidMethodParameter<Params> = NativeParameter<string, Params>;
 /** Represents an Android module. */
 declare type AndroidModule = Readonly<{
     [K: string]: (params: AndroidMethodParameter<any>) => unknown;
