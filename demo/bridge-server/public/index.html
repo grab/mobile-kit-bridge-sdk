@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>JS bridge SDK</title>
+    <link rel="stylesheet" href="index.css">
+    <script type="text/javascript" src="bridgeSDK.min.js"></script>
+
+    <script> 
+      window.bridgeSDK.wrapModule(window, 'ExampleModule');
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <div id="module-list"></div>
+      <div id="invoke-result">Waiting for some result</div>
+
+      <div class="value-container">
+        <div class="instruction">Set value</div>
+        <input class="set-key key" placeholder="Key" value="DefKey"/>
+        <input class="set-value value" onkeyup="setValue()" placeholder="Value"/>
+      </div>
+
+      <div class="value-container">
+          <div class="instruction actionable" 
+            onclick="observeValueOrUnsubscribe()">
+            Click to observe
+          </div>
+
+          <input class="observe-key key" placeholder="Key to observe" value="DefKey"/>
+          <div class="observe-value value"></div>
+      </div>
+    </div>
+
+    <script>
+      const subscriptions = {};
+      const exampleModule = window.ExampleModule;
+
+      async function setValue() {
+        const key = document.getElementsByClassName("set-key")[0].value;
+        const value = document.getElementsByClassName("set-value")[0].value;
+        const resultDiv = document.getElementById("invoke-result");
+
+        try {
+          await exampleModule.invoke('setValue', { key, value });
+          resultDiv.innerHTML = "Successfully called setValue!"
+        } catch (e) {
+          resultDiv.innerHTML = `Error: ${e.message} ${Object.keys(e)}`;
+        }
+      }
+
+      async function observeValueOrUnsubscribe() {
+        const instructionDiv = document.getElementsByClassName("instruction")[1];
+        const key = document.getElementsByClassName("observe-key")[0].value;
+        const resultDiv = document.getElementById("invoke-result");
+
+        try {
+          if (!!subscriptions[key]) {
+            await exampleModule.invoke('unsubscribeFromObserver', { key });
+            return;
+          }
+
+          const subscription = exampleModule.invoke('observeValue', { key })
+            .subscribe({
+              next: ({ result }) => {
+                const elem = document.getElementsByClassName("observe-value")[0];
+                elem.innerHTML = result;
+              },
+              complete: () => {
+                delete subscriptions[key];
+                resultDiv.innerHTML = `Successfully unsubscribed for key ${key}!`;
+                instructionDiv.innerHTML = "Click to observe";
+              }
+            });
+
+          subscriptions[key] = subscription;
+          resultDiv.innerHTML = `Successfully subscribed for key ${key}!`;
+          instructionDiv.innerHTML = "Click to unsub"
+        } catch (e) {
+          resultDiv.innerHTML = `Error: ${e.message} ${Object.keys(e)}`;
+        }
+      }
+    
+      (function setLoadedModules() {
+        document.getElementById("module-list").innerHTML = `Modules: [${[
+          !!exampleModule && 'ExampleModule'
+        ].filter(md => !!md)}]`;
+      })()
+    </script>
+  </body>
+</html>

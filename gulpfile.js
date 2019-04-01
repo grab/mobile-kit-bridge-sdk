@@ -11,6 +11,7 @@ const paths = {
 
 const src = 'src/index.ts';
 const dest = 'dist';
+const demoDest = path.join('demo', 'bridge-server', 'public');
 
 gulp.task('clean:dist', async function() {
   return sync(dest, { force: true });
@@ -31,7 +32,7 @@ gulp.task(
 gulp.task(
   'ts:bundle:umd',
   bundle({
-    dest,
+    dest: demoDest,
     src,
     name: 'bridgeSDK',
     rollup: { outputOptions: { format: 'umd', sourcemap: false } }
