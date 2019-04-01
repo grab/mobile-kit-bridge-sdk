@@ -38,6 +38,7 @@ export function wrapIOSModule<MethodKeys extends string>(
     invoke: (method, params) => {
       return simplifyCallback(globalObject, {
         funcNameToWrap: method,
+        isStream: params.isStream,
         callbackNameFunc: () => {
           const requestID = methodRequestIDMap[method] || 0;
           methodRequestIDMap[method] = requestID + 1;

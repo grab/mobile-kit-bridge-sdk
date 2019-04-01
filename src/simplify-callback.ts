@@ -1,9 +1,12 @@
 import { createSubscription, DataStream, Subscription } from './subscription';
-import { CallbackResult, isStreamFunction, isType, Omit } from './utils';
+import { CallbackResult, isType, Omit } from './utils';
 
 type Params = Readonly<{
   /** The name of the function to be wrapped. */
   funcNameToWrap: string;
+
+  /** Check whether a stream should be returned instead of a Promise */
+  isStream: unknown;
 
   /** The method being wrapped. */
   funcToWrap: (callbackName: string) => () => unknown;
@@ -39,7 +42,7 @@ export type StreamEventResult = Readonly<{
  */
 function promisifyCallback(
   globalObject: any,
-  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
+  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap' | 'isStream'>
 ): PromiseLike<any> {
   const callbackName = callbackNameFunc();
 
@@ -66,7 +69,7 @@ function promisifyCallback(
  */
 function streamCallback(
   globalObject: any,
-  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
+  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap' | 'isStream'>
 ): DataStream {
   return {
     subscribe: (handlers): Subscription => {
@@ -115,9 +118,9 @@ function streamCallback(
  */
 export function simplifyCallback(
   globalObject: any,
-  { funcNameToWrap, ...restParams }: Params
+  { funcNameToWrap, isStream, ...restParams }: Params
 ) {
-  if (isStreamFunction(funcNameToWrap)) {
+  if (!!isStream) {
     return streamCallback(globalObject, restParams);
   }
 

@@ -1,13 +1,16 @@
 import { simplifyCallback } from './simplify-callback';
 import {
+  DefaultParameters,
   getCallbackName,
   getObjectKeys,
-  StringKeys,
-  NativeParameter
+  NativeParameter,
+  StringKeys
 } from './utils';
 
 /** Android method parameters  */
-export type AndroidMethodParameter<Params> = NativeParameter<string, Params>;
+export type AndroidMethodParameter<
+  Params = Readonly<{ [K: string]: unknown }>
+> = NativeParameter<string, Params>;
 
 /** Represents an Android module. */
 type AndroidModule = Readonly<{
@@ -21,7 +24,7 @@ type AndroidModule = Readonly<{
 type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
   invoke: <MethodKey extends StringKeys<Original>>(
     method: MethodKey,
-    params: Readonly<{ [K: string]: unknown }>
+    params: Readonly<{ [K: string]: unknown }> & DefaultParameters
   ) => unknown;
 }>;
 
@@ -49,10 +52,11 @@ export function wrapAndroidModule<Module extends AndroidModule>(
       };
 
       return {
-        [key]: (params: AndroidMethodParameter<any>['parameters']) => {
+        [key]: (params: AndroidMethodParameter['parameters']) => {
           return simplifyCallback(globalObject, {
             callbackNameFunc,
             funcNameToWrap: key,
+            isStream: params.isStream,
             funcToWrap: callback =>
               moduleObj[key].bind(
                 moduleObj,

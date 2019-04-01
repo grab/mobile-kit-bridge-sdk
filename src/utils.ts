@@ -1,13 +1,16 @@
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type StringKeys<T> = Extract<keyof T, string>;
 
+/** Default parameters that must be present in all calls. */
+export type DefaultParameters = Readonly<{ isStream: unknown }>;
+
 /** Method parameters for native methods. */
 export type NativeParameter<MethodKey, Params> = Readonly<{
   /** The method name. */
   method: MethodKey;
 
   /** The method parameters. */
-  parameters: Params;
+  parameters: Params & DefaultParameters;
 
   /** The name of the callback. */
   callback: string;
@@ -34,14 +37,6 @@ export function getObjectKeys<T>(object: T) {
     ...Object.keys(object),
     ...Object.getOwnPropertyNames(Object.getPrototypeOf(object))
   ];
-}
-
-/**
- * Check if a function returns a stream.
- * @param funcName The name of the function.
- */
-export function isStreamFunction(funcName: string) {
-  return funcName.toLowerCase().startsWith('observe');
 }
 
 /**

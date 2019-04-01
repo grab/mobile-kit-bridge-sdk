@@ -219,7 +219,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscription = wrappedModule
-      .invoke('observeGetSomething', { interval })
+      .invoke('observeGetSomething', { interval, isStream: true })
       .subscribe({ next: (value: CallbackResult) => streamedVals.push(value) });
 
     // Then
@@ -245,7 +245,10 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscription = wrappedModule
-      .invoke('observeGetSomethingWithTerminate', { timeout: streamTimeout })
+      .invoke('observeGetSomethingWithTerminate', {
+        isStream: true,
+        timeout: streamTimeout
+      })
       .subscribe({
         next: (value: CallbackResult) => streamedValues.push(value),
         complete: () => (completed = true)
@@ -267,7 +270,10 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     // Setup
     const iterations = 1000;
 
-    const stream = wrappedModule.invoke('observeGetSomething', { param: 1 });
+    const stream = wrappedModule.invoke('observeGetSomething', {
+      isStream: true,
+      param: 1
+    });
 
     // When
     const subscriptions = [...Array(iterations)].map(() =>
