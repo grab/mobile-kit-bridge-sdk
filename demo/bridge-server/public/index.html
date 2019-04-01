@@ -60,7 +60,7 @@
             return;
           }
 
-          const subscription = exampleModule.invoke('observeValue', { key })
+          const subscription = exampleModule.invoke('observeValue', { key, isStream: true })
             .subscribe({
               next: ({ result }) => {
                 const elem = document.getElementsByClassName("observe-value")[0];

@@ -1,6 +1,8 @@
 declare type Params = Readonly<{
     /** The name of the function to be wrapped. */
     funcNameToWrap: string;
+    /** Check whether a stream should be returned instead of a Promise */
+    isStream: unknown;
     /** The method being wrapped. */
     funcToWrap: (callbackName: string) => () => unknown;
     /** Function to create the name of the callback that will receive results. */
@@ -27,7 +29,7 @@ export declare type StreamEventResult = Readonly<{
  * @param param1 Parameters for callback simplification.
  * @return Check the return types for private functions in this module.
  */
-export declare function simplifyCallback(globalObject: any, { funcNameToWrap, ...restParams }: Params): PromiseLike<any> | Readonly<{
+export declare function simplifyCallback(globalObject: any, { funcNameToWrap, isStream, ...restParams }: Params): PromiseLike<any> | Readonly<{
     subscribe: (handlers?: Readonly<{
         next?: ((data: Readonly<{
             result: unknown;

@@ -1,6 +1,8 @@
-import { StringKeys, NativeParameter } from './utils';
+import { DefaultParameters, NativeParameter, StringKeys } from './utils';
 /** Android method parameters  */
-export declare type AndroidMethodParameter<Params> = NativeParameter<string, Params>;
+export declare type AndroidMethodParameter<Params = Readonly<{
+    [K: string]: unknown;
+}>> = NativeParameter<string, Params>;
 /** Represents an Android module. */
 declare type AndroidModule = Readonly<{
     [K: string]: (params: string) => unknown;
@@ -12,7 +14,7 @@ declare type AndroidModule = Readonly<{
 declare type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
     invoke: <MethodKey extends StringKeys<Original>>(method: MethodKey, params: Readonly<{
         [K: string]: unknown;
-    }>) => unknown;
+    }> & DefaultParameters) => unknown;
 }>;
 /**
  * Wrap an Android module.

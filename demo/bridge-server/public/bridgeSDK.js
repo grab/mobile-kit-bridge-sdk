@@ -58,13 +58,6 @@
         ];
     }
     /**
-     * Check if a function returns a stream.
-     * @param funcName The name of the function.
-     */
-    function isStreamFunction(funcName) {
-        return funcName.toLowerCase().startsWith('observe');
-    }
-    /**
      * Get the callback name that will be used to access global callback.
      * @param param0 The required parameters.
      * @return The combined callback name.
@@ -155,8 +148,8 @@
      * @return Check the return types for private functions in this module.
      */
     function simplifyCallback(globalObject, _a) {
-        var { funcNameToWrap } = _a, restParams = __rest(_a, ["funcNameToWrap"]);
-        if (isStreamFunction(funcNameToWrap)) {
+        var { funcNameToWrap, isStream } = _a, restParams = __rest(_a, ["funcNameToWrap", "isStream"]);
+        if (!!isStream) {
             return streamCallback(globalObject, restParams);
         }
         return promisifyCallback(globalObject, restParams);
@@ -184,6 +177,7 @@
                     return simplifyCallback(globalObject, {
                         callbackNameFunc,
                         funcNameToWrap: key,
+                        isStream: params.isStream,
                         funcToWrap: callback => moduleObj[key].bind(moduleObj, JSON.stringify({
                             callback,
                             method: key,
@@ -212,6 +206,7 @@
             invoke: (method, params) => {
                 return simplifyCallback(globalObject, {
                     funcNameToWrap: method,
+                    isStream: params.isStream,
                     callbackNameFunc: () => {
                         const requestID = methodRequestIDMap[method] || 0;
                         methodRequestIDMap[method] = requestID + 1;

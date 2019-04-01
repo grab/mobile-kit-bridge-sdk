@@ -1,11 +1,15 @@
 export declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export declare type StringKeys<T> = Extract<keyof T, string>;
+/** Default parameters that must be present in all calls. */
+export declare type DefaultParameters = Readonly<{
+    isStream: unknown;
+}>;
 /** Method parameters for native methods. */
 export declare type NativeParameter<MethodKey, Params> = Readonly<{
     /** The method name. */
     method: MethodKey;
     /** The method parameters. */
-    parameters: Params;
+    parameters: Params & DefaultParameters;
     /** The name of the callback. */
     callback: string;
 }>;
@@ -23,11 +27,6 @@ export declare type CallbackResult = Readonly<{
  * @return Array of object keys.
  */
 export declare function getObjectKeys<T>(object: T): string[];
-/**
- * Check if a function returns a stream.
- * @param funcName The name of the function.
- */
-export declare function isStreamFunction(funcName: string): boolean;
 /**
  * Get the callback name that will be used to access global callback.
  * @param param0 The required parameters.
