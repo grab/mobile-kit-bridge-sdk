@@ -1,0 +1,58 @@
+* {
+  box-sizing: border-box;
+  font-size: 0.95em;
+  margin: 0px;
+  padding: 0px;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+#root > *:not(:first-child) {
+  margin-top: 16px;
+}
+
+#root > #module-list, #root > #invoke-result {
+  display: flex;
+  justify-content: center;
+}
+
+#root > .value-container {
+  display: flex;
+}
+
+.value-container > *:not(:first-child) {
+  margin-left: 16px;
+}
+
+.value-container > .instruction {
+  align-items: center;
+  border: 0.5px solid black;
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  width: calc(100% / 3);
+}
+
+.value-container > .actionable {
+  background-color: grey;
+  border: none;
+  color: white;
+}
+
+.value-container > .key, .value-container > .value {
+  align-items: center;
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  text-align: center;
+  width: calc(100% / 3);
+}
+
+.value-container > .observe-value {
+  border: 0.5px solid lightgrey;
+  overflow: hidden;
+}

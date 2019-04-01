@@ -77,7 +77,7 @@ function streamCallback(
       globalObject[callbackName] = (
         data: CallbackResult | StreamEventResult
       ) => {
-        if (isType<CallbackResult>(data, 'result', 'error', 'status_code')) {
+        if (isType<CallbackResult>(data, 'status_code')) {
           handlers && handlers.next && handlers.next(data);
         } else {
           switch (data.event) {

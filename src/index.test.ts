@@ -18,20 +18,27 @@ function formatError(param: unknown) {
 
 function createTestADRModule(globalObject: any) {
   return {
-    getSomething({
-      parameters: { param1, param2 },
-      callback
-    }: AndroidMethodParameter<Readonly<{ param1: string; param2: string }>>) {
+    getSomething(params: string) {
+      const {
+        parameters: { param1, param2 },
+        callback
+      }: AndroidMethodParameter<{
+        param1: string;
+        param2: string;
+      }> = JSON.parse(params);
+
       globalObject[callback]({
         result: formatResult(param1, param2),
         error: null,
         status_code: 200
       });
     },
-    observeGetSomething({
-      parameters: { interval },
-      callback
-    }: AndroidMethodParameter<Readonly<{ interval: number }>>) {
+    observeGetSomething(params: string) {
+      const {
+        parameters: { interval },
+        callback
+      }: AndroidMethodParameter<{ interval: number }> = JSON.parse(params);
+
       let count = 0;
 
       const intervalID = setInterval(() => {
@@ -48,18 +55,22 @@ function createTestADRModule(globalObject: any) {
         }
       },                             interval);
     },
-    observeGetSomethingWithTerminate({
-      parameters: { timeout },
-      callback
-    }: AndroidMethodParameter<Readonly<{ timeout: number }>>) {
+    observeGetSomethingWithTerminate(params: string) {
+      const {
+        parameters: { timeout },
+        callback
+      }: AndroidMethodParameter<{ timeout: number }> = JSON.parse(params);
+
       setTimeout(() => {
         globalObject[callback]({ event: StreamEvent.STREAM_TERMINATED });
       },         timeout);
     },
-    throwError({
-      parameters: { param },
-      callback
-    }: AndroidMethodParameter<Readonly<{ param: string }>>) {
+    throwError(params: string) {
+      const {
+        parameters: { param },
+        callback
+      }: AndroidMethodParameter<{ param: string }> = JSON.parse(params);
+
       globalObject[callback]({
         result: null,
         error: { message: formatError(param) },

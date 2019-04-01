@@ -11,7 +11,7 @@ export type AndroidMethodParameter<Params> = NativeParameter<string, Params>;
 
 /** Represents an Android module. */
 type AndroidModule = Readonly<{
-  [K: string]: (params: AndroidMethodParameter<any>) => unknown;
+  [K: string]: (params: string) => unknown;
 }>;
 
 /**
@@ -21,7 +21,7 @@ type AndroidModule = Readonly<{
 type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
   invoke: <MethodKey extends StringKeys<Original>>(
     method: MethodKey,
-    params: Parameters<Original[MethodKey]>[0]['parameters']
+    params: Readonly<{ [K: string]: unknown }>
   ) => unknown;
 }>;
 
@@ -54,11 +54,14 @@ export function wrapAndroidModule<Module extends AndroidModule>(
             callbackNameFunc,
             funcNameToWrap: key,
             funcToWrap: callback =>
-              moduleObj[key].bind(moduleObj, {
-                callback,
-                method: key,
-                parameters: params
-              })
+              moduleObj[key].bind(
+                moduleObj,
+                JSON.stringify({
+                  callback,
+                  method: key,
+                  parameters: params
+                })
+              )
           });
         }
       };
