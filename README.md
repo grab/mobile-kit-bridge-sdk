@@ -8,42 +8,42 @@ For example:
 
 ```javascript
 const identifier = await window.LocaleKit.invoke('getLocaleIdentifier');
-
-await window.AnalyticsModule.invoke(
-  'track',
-  createMethodParameter('analyticsEvent', event),
-)
-
-await window.MediaKit.invoke(
-  'playDRMContent',
-  createMethodParameter('contentURL', contentURL),
-  createMethodParameter('license', license),
-  ...
-)
+await window.AnalyticsModule.invoke('track', { analyticsEvent: event })
+await window.MediaKit.invoke('playDRMContent', { contentURL, license })
 ```
 
-All module methods will have `callbackName` as one of the parameters:
+All module methods will have `callback` as one of the parameters:
 
 ```java
 class AnalyticsModuleBridge {
-  fun track(event: Any, callbackName: string) {...}
+  fun track(requestString: String) {
+    val request = Gson().fromJson(...)
+    val callback = request.callback
+    ...
+  }
 }
 ```
 
 ```swift
-class AnalyticsModuleBridge {
-  func track(event: Any, callbackName: string) {...}
+final class AnalyticsModuleBridge: WKScriptMessageHandler {
+  func userContentController(
+    _ userContentController: WKUserContentController,
+    didReceive message: WKScriptMessage) {
+    let request = message.body as! [String : Any]
+    let callback = request["callback"] as! String
+    ...
+  }
 }
 ```
 
-For the sake of standardization, **all** module methods must invoke the relevant callback after they finish, even if they run synchronously or do not have anything meaningful to return. Use the parameter `callbackName` to identify the correct callback to invoke:
+For the sake of standardization, **all** module methods must invoke the relevant callback after they finish, even if they run synchronously or do not have anything meaningful to return. Use the parameter `callback` to identify the correct callback to invoke:
 
 ```java
-webView.evaluateJavascript("window[$callbackName](...)") { _ -> }
+webView.evaluateJavascript("javascript:window.$callback(...)") { _ -> }
 ```
 
 ```swift
-webView.evaluateJavascript("window[\(callbackName)](...)", nil)
+webView.evaluateJavascript("window.\(callback)(...)", nil)
 ```
 
 The name of the callback always starts with:
@@ -63,10 +63,10 @@ This callback style allows us to pass errors to the partner app that they can ha
 
 ## Value streaming
 
-All module methods whose name starts with `observe` are assumed to support streaming, e.g.:
+All module methods whose parameters include a flag `isStream: true` are assumed to support streaming, e.g.:
 
 ```javascript
-const subscription = MediaKit.observePlayDRMContent(...).subscribe({
+const subscription = window.MediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({
   next: console.log,
   complete: console.log,
 });
@@ -78,7 +78,7 @@ Note that `DataStream` always creates new streams whenever `subscribe` is called
 
 ```javascript
 const playObservable = new Observable(sub => {
-  const subscription = MediaKit.observePlayDRMContent(...).subscribe({ 
+  const subscription = window.MediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({ 
     next: data => sub.next(data),
     complete: () => sub.complete(),
   });
