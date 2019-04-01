@@ -8,6 +8,6 @@
 
 ## What to test
 
-- Clicking on `Click to observe` should start observing values for the defined key.
-- Typing on the value input should stream values to the `observe-value` `div`.
-- Clicking on `Click to unsub` should unsubscribe from the value stream.
+- Clicking on **Click to observe** should start observing values for the defined key.
+- Typing on the value input should stream values to the `observe-value` **div**.
+- Clicking on **Click to unsub** should unsubscribe from the value stream.
