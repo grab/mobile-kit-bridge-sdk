@@ -14,6 +14,7 @@
     <div id="root">
       <div id="module-list"></div>
       <div id="invoke-result">Waiting for some result</div>
+      <div id="invoke-count">Invocation count: 0</div>
 
       <div class="value-container">
         <div class="instruction">Set value</div>
@@ -35,6 +36,13 @@
     <script>
       const subscriptions = {};
       const exampleModule = window.ExampleModule;
+      let invocationCount = 0;
+
+      function incrementInvocationCount() {
+        invocationCount += 1;
+        const newMessage = `Invocation count: ${invocationCount}`;
+        document.getElementById('invoke-count').innerHTML = newMessage;
+      }
 
       async function setValue() {
         const key = document.getElementsByClassName("set-key")[0].value;
@@ -46,6 +54,8 @@
           resultDiv.innerHTML = "Successfully called setValue!"
         } catch (e) {
           resultDiv.innerHTML = `Error: ${e.message} ${Object.keys(e)}`;
+        } finally {
+          incrementInvocationCount();
         }
       }
 
@@ -78,6 +88,8 @@
           instructionDiv.innerHTML = "Click to unsub"
         } catch (e) {
           resultDiv.innerHTML = `Error: ${e.message} ${Object.keys(e)}`;
+        } finally {
+          incrementInvocationCount();
         }
       }
     

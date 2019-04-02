@@ -15,7 +15,7 @@
   margin-top: 16px;
 }
 
-#root > #module-list, #root > #invoke-result {
+#root > #module-list, #root > #invoke-result, #root > #invoke-count {
   display: flex;
   justify-content: center;
 }
