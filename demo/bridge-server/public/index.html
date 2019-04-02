@@ -56,7 +56,7 @@
 
         try {
           if (!!subscriptions[key]) {
-            await exampleModule.invoke('unsubscribeFromObserver', { key });
+            subscriptions[key].unsubscribe();
             return;
           }
 

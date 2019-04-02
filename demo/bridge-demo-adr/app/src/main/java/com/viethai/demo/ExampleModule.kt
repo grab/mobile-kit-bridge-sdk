@@ -1,24 +1,21 @@
 package com.viethai.demo
 
+import io.reactivex.BackpressureStrategy
+import io.reactivex.Flowable
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 /** Created by viethai.pham on 29/3/19 */
 class ExampleModule {
-  enum class StreamState {
-    ACTIVE,
-    COMPLETED
-  }
-
   private val lock: ReentrantReadWriteLock = ReentrantReadWriteLock()
   private val keyStore = hashMapOf<String, Any?>()
-  private val observers = hashMapOf<String, (String, Any?, StreamState) -> Unit>()
+  private val observers = hashMapOf<String, (Any?) -> Unit>()
 
   fun setValue(key: String, value: Any?) {
     this.lock.write {
       this@ExampleModule.keyStore[key] = value
-      this@ExampleModule.observers.forEach { it.value(key, value, StreamState.ACTIVE) }
+      this@ExampleModule.observers.forEach { it.value(value) }
     }
   }
 
@@ -26,13 +23,13 @@ class ExampleModule {
     return this.lock.read { this.keyStore[key] }
   }
 
-  fun observeValue(key: String, observer: (String, Any?, StreamState) -> Unit) {
-    this.lock.write { this@ExampleModule.observers[key] = observer }
-  }
+  fun observeValue(key: String, observer: (Any?) -> Unit): Flowable<Any> {
+    return Flowable.create({ emitter ->
+      this@ExampleModule.lock.write { this@ExampleModule.observers[key] = observer }
 
-  fun unsubscribeFromObserver(key: String) {
-    this.lock.write {
-      this@ExampleModule.observers.remove(key)?.invoke(key, null, StreamState.COMPLETED)
-    }
+      emitter.setCancellable {
+        this@ExampleModule.lock.write { this@ExampleModule.observers.remove(key) }
+      }
+    }, BackpressureStrategy.BUFFER)
   }
 }
