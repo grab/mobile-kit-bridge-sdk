@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import RxSwift
 import WebKit
 
 protocol BridgeDelegate: class {
@@ -24,6 +25,14 @@ final class ExampleModuleBridge: NSObject {
   init(module: ExampleModule, delegate: BridgeDelegate) {
     self.module = module
     self.delegate = delegate
+  }
+  
+  private func isCallbackAvailable(callback: String, cb: @escaping (Bool) -> Void) {
+    let javascript = "!!window.\(callback)"
+    
+    self.delegate?.evaluateJavaScript(javascript) {result, error in
+      cb((result as? Int).map({$0 == 1}) ?? false)
+    }
   }
   
   private func sendResult(response: ResponseType, callback: String) {
@@ -50,14 +59,6 @@ extension ExampleModuleBridge: WKScriptMessageHandler {
     }
   }
   
-  private struct StreamEvent: ResponseType {
-    let event: String
-    
-    func toDictionary() -> [String : Any?] {
-      return ["event": self.event]
-    }
-  }
-  
   func userContentController(_ userContentController: WKUserContentController,
                              didReceive message: WKScriptMessage) {
     let params = message.body as! [String : Any]
@@ -75,24 +76,20 @@ extension ExampleModuleBridge: WKScriptMessageHandler {
       
     case "observeValue":
       let key = parameters["key"] as! String
+      var disposable = Disposables.create()
       
-      self.module.observeValue(key: key) { [weak self] _, value, state in
-        guard let this = self else { return }
+      disposable = self.module.observeValue(key: key) { [weak self] value in
+        guard let this = self else { disposable.dispose(); return }
         
-        switch state {
-        case .active:
-          let response = CallbackResponse(result: value, error: nil, status_code: 200)
-          this.sendResult(response: response, callback: callback)
-          
-        case .complete:
-          let response = StreamEvent(event: "STREAM_TERMINATED")
-          this.sendResult(response: response, callback: callback)
+        this.isCallbackAvailable(callback: callback) {
+          if $0 {
+            let response = CallbackResponse(result: value, error: nil, status_code: 200)
+            this.sendResult(response: response, callback: callback)
+          } else {
+            disposable.dispose()
+          }
         }
-      }
-      
-    case "unsubscribeFromObserver":
-      let key = parameters["key"] as! String
-      self.module.unsubscribeFromObserver(key: key)
+      }.subscribe()
       
     default:
       break
