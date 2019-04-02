@@ -45,6 +45,26 @@
             }
         };
     }
+    /**
+     * Create a data stream with default functionalities.
+     * @param subscribe Injected subscribe function.
+     * @return A DataStream instance.
+     */
+    function createDataStream(subscribe) {
+        return {
+            subscribe,
+            then: onFulfilled => {
+                return new Promise(() => {
+                    const subscription = subscribe({
+                        next: data => {
+                            !!onFulfilled && onFulfilled(data);
+                            subscription.unsubscribe();
+                        }
+                    });
+                });
+            }
+        };
+    }
 
     /**
      * Get the keys of an object.
@@ -108,37 +128,35 @@
      * @return A stream that can be subscribed to.
      */
     function streamCallback(globalObject, { callbackNameFunc, funcToWrap }) {
-        return {
-            subscribe: (handlers) => {
-                /** Generate callback name dynamically to make this stream idempotent. */
-                const callbackName = callbackNameFunc();
-                let subscription;
-                globalObject[callbackName] = (data) => {
-                    if (isType(data, 'status_code')) {
-                        handlers && handlers.next && handlers.next(data);
+        return createDataStream((handlers) => {
+            /** Generate callback name dynamically to make this stream idempotent. */
+            const callbackName = callbackNameFunc();
+            let subscription;
+            globalObject[callbackName] = (data) => {
+                if (isType(data, 'status_code')) {
+                    handlers && handlers.next && handlers.next(data);
+                }
+                else {
+                    switch (data.event) {
+                        case exports.StreamEvent.STREAM_TERMINATED:
+                            subscription.unsubscribe();
+                            break;
                     }
-                    else {
-                        switch (data.event) {
-                            case exports.StreamEvent.STREAM_TERMINATED:
-                                subscription.unsubscribe();
-                                break;
-                        }
-                    }
-                };
-                funcToWrap(callbackName)();
-                subscription = createSubscription(() => {
-                    /**
-                     * Native should check for the existence of this callback every time a
-                     * value is bound to be delivered. If no such callback exists, it may
-                     * be assumed that the web client has unsubscribed from this stream, and
-                     * therefore the stream may be terminated on the mobile side.
-                     */
-                    delete globalObject[callbackName];
-                    handlers && handlers.complete && handlers.complete();
-                });
-                return subscription;
-            }
-        };
+                }
+            };
+            funcToWrap(callbackName)();
+            subscription = createSubscription(() => {
+                /**
+                 * Native should check for the existence of this callback every time a
+                 * value is bound to be delivered. If no such callback exists, it may
+                 * be assumed that the web client has unsubscribed from this stream, and
+                 * therefore the stream may be terminated on the mobile side.
+                 */
+                delete globalObject[callbackName];
+                handlers && handlers.complete && handlers.complete();
+            });
+            return subscription;
+        });
     }
     /**
      * Handle the simplication of callbacks for both single asynchronous return

@@ -89,6 +89,12 @@ const playObservable = new Observable(sub => {
 playObservable.pipe(filter(...), map(...)).subscribe(...);
 ```
 
+`DataStream` also supports `Promise`-style chaining and `async-await`. Instead of getting values over time, this will simply deliver the first value that arrives:
+
+```javascript
+const { result, error, status_code } = await window.MediaKit.invoke('observePlayDRMContent', { isStream: true, ... });
+```
+
 ## Data format
 
 Callback results must be in the format prescribed below:
