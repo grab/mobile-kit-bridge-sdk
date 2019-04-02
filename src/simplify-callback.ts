@@ -1,4 +1,9 @@
-import { createSubscription, DataStream, Subscription } from './subscription';
+import {
+  createSubscription,
+  createDataStream,
+  DataStream,
+  Subscription
+} from './subscription';
 import { CallbackResult, isType, Omit } from './utils';
 
 type Params = Readonly<{
@@ -71,8 +76,8 @@ function streamCallback(
   globalObject: any,
   { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap' | 'isStream'>
 ): DataStream {
-  return {
-    subscribe: (handlers): Subscription => {
+  return createDataStream(
+    (handlers): Subscription => {
       /** Generate callback name dynamically to make this stream idempotent. */
       const callbackName = callbackNameFunc();
       let subscription: Subscription;
@@ -106,7 +111,7 @@ function streamCallback(
 
       return subscription;
     }
-  };
+  );
 }
 
 /**

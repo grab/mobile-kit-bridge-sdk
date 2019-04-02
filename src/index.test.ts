@@ -7,6 +7,7 @@ import {
 } from './index';
 import { wrapAndroidModule } from './wrap-android';
 import { wrapIOSModule } from './wrap-ios';
+import { createDataStream, createSubscription } from './subscription';
 
 function formatResult(param1: unknown, param2: unknown) {
   return `${param1}-${param2}`;
@@ -368,5 +369,39 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const ios = createTestIOSModule(globalObject);
     const wrapped = wrapIOSModule(globalObject, 'TestIOSModule', ios);
     await test_moduleMethodStream_shouldBeIdempotent(globalObject, wrapped);
+  });
+});
+
+describe('Utility functions should work correctly', () => {
+  it.only('Data stream should support Promise-style chaining', async done => {
+    // Setup
+    let currentTick = 0;
+
+    const dataStream = createDataStream(handlers => {
+      const intervalID = setInterval(() => {
+        currentTick += 1;
+
+        handlers &&
+          handlers.next &&
+          handlers.next({ result: currentTick, error: null, status_code: 200 });
+      },                             100);
+
+      return createSubscription(() => {
+        clearInterval(intervalID);
+        handlers && handlers.complete && handlers.complete();
+      });
+    });
+
+    // When
+    const { result, error, status_code } = await dataStream;
+
+    // Then
+    setTimeout(() => {
+      expect(result).toEqual(1);
+      expect(error).toBeFalsy();
+      expect(status_code).toEqual(200);
+      expect(currentTick).toEqual(1);
+      done();
+    },         500);
   });
 });
