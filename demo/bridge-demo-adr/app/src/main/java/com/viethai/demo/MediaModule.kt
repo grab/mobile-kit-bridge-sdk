@@ -5,10 +5,10 @@ import java.util.concurrent.TimeUnit
 
 /** Created by viethai.pham on 4/4/19 */
 class MediaModule {
-  sealed class PlayEvent {
-    object StartVideo : PlayEvent()
-    object StopVideo : PlayEvent()
-    data class ElapsedTime(val elapsed: Int, val total: Int) : PlayEvent()
+  sealed class PlayEvent(val type: String) {
+    object StartVideo : PlayEvent("START_VIDEO")
+    object StopVideo : PlayEvent("STOP_VIDEO")
+    data class ElapsedTime(val elapsed: Int, val total: Int) : PlayEvent("PROGRESS_VIDEO")
   }
 
   fun playVideo(): Flowable<PlayEvent> {

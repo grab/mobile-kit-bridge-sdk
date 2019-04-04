@@ -15,10 +15,13 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.main_activity)
     val storeModule = StorageModule()
     val storageBridge = StorageModuleBridge(this.web_view, storeModule, Gson())
+    val mediaModule = MediaModule()
+    val mediaBridge = MediaModuleBridge(this.web_view, mediaModule, Gson())
 
     this.web_view.apply {
       this.settings.apply { this.javaScriptEnabled = true }
       this.addJavascriptInterface(storageBridge, "StorageModule")
+      this.addJavascriptInterface(mediaBridge, "MediaModule")
       this.loadUrl("http://10.0.2.2:8000")
     }
   }

@@ -132,8 +132,8 @@
                     setResultMessage(`Playback: elapsed ${elapsed} / ${total}`);
                     const progress = elapsed / total;
                     progressBar.style.left = `${progress * 100}%`;
-                  } else if (!!data.event) {
-                    setResultMessage(`Playback: event ${event}`);
+                  } else if (!!data.result.type) {
+                    setResultMessage(`Playback: event ${data.result.type}`);
                   }
                 }
               },
