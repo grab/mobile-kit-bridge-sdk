@@ -9,8 +9,8 @@ import io.reactivex.disposables.Disposables
 
 /** Created by viethai.pham on 31/3/19 */
 @SuppressLint("NewApi")
-class ExampleModuleBridge(private val webView: WebView,
-                          private val module: ExampleModule,
+class StorageModuleBridge(private val webView: WebView,
+                          private val module: StorageModule,
                           private val gson: Gson) {
   data class Request(val method: String, val parameters: Map<String, Any>, val callback: String)
   data class Response(val result: Any?, val error: Any?, val status_code: Int)
@@ -19,7 +19,7 @@ class ExampleModuleBridge(private val webView: WebView,
     val javascript = "javascript:!!window.$callback"
 
     this.webView.post {
-      this@ExampleModuleBridge.webView.evaluateJavascript(javascript) { cb(it == "true") }
+      this@StorageModuleBridge.webView.evaluateJavascript(javascript) { cb(it == "true") }
     }
   }
 
@@ -28,7 +28,7 @@ class ExampleModuleBridge(private val webView: WebView,
 
     this.webView.post {
       val javascript = "javascript:${request.callback}($responseString)"
-      this@ExampleModuleBridge.webView.evaluateJavascript(javascript) {}
+      this@StorageModuleBridge.webView.evaluateJavascript(javascript) {}
     }
   }
 
@@ -56,7 +56,7 @@ class ExampleModuleBridge(private val webView: WebView,
     var disposable: Disposable = Disposables.fromAction {  }
 
     disposable = this.module.observeValue(key) { v ->
-      this@ExampleModuleBridge.isCallbackAvailable(request.callback) {
+      this@StorageModuleBridge.isCallbackAvailable(request.callback) {
         if (it) {
           this.sendResponse(request, Response(v, null, 200))
         } else {

@@ -1,5 +1,5 @@
 //
-//  ExampleModuleBridge.swift
+//  StorageModuleBridge.swift
 //  BridgeDemoIOS
 //
 //  Created by Viethai Pham on 1/4/19.
@@ -10,7 +10,7 @@ import Foundation
 import RxSwift
 import WebKit
 
-protocol BridgeDelegate: class {
+protocol StorageBridgeDelegate: class {
   func evaluateJavaScript(_ javascript: String, completionHandler: ((Any?, Error?) -> Void)?)
 }
 
@@ -18,11 +18,11 @@ protocol ResponseType {
   func toDictionary() -> [String : Any?]
 }
 
-final class ExampleModuleBridge: NSObject {
-  private let module: ExampleModule
-  private weak var delegate: BridgeDelegate?
+final class StorageModuleBridge: NSObject {
+  private let module: StorageModule
+  private weak var delegate: StorageBridgeDelegate?
   
-  init(module: ExampleModule, delegate: BridgeDelegate) {
+  init(module: StorageModule, delegate: StorageBridgeDelegate) {
     self.module = module
     self.delegate = delegate
   }
@@ -44,7 +44,7 @@ final class ExampleModuleBridge: NSObject {
   }
 }
 
-extension ExampleModuleBridge: WKScriptMessageHandler {
+extension StorageModuleBridge: WKScriptMessageHandler {
   private struct CallbackResponse: ResponseType {
     let result: Any?
     let error: Any?

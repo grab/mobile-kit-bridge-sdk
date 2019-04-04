@@ -40,6 +40,10 @@
   color: white;
 }
 
+#root input {
+  border: 0.5px solid grey;
+}
+
 /* ################################ Storage ################################ */
 
 .storage-container > * {
@@ -59,7 +63,7 @@
 }
 
 .storage-container > .observe-value {
-  border: 0.5px solid lightgrey;
+  border: 0.5px solid grey;
   overflow: hidden;
 }
 

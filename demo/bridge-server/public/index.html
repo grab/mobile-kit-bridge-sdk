@@ -7,7 +7,7 @@
     <script type="text/javascript" src="bridgeSDK.min.js"></script>
 
     <script> 
-      window.bridgeSDK.wrapModule(window, 'ExampleModule');
+      window.bridgeSDK.wrapModule(window, 'StorageModule');
     </script>
   </head>
   <body>
@@ -34,7 +34,7 @@
 
       <div class="media-container">
         <div class="instruction actionable">
-          Click to start playing video
+          Start video
         </div>
 
         <div class="progress-container">
@@ -46,7 +46,7 @@
 
     <script>
       const subscriptions = {};
-      const exampleModule = window.ExampleModule;
+      const storageModule = window.StorageModule;
       let invocationCount = 0;
 
       function incrementInvocationCount() {
@@ -61,7 +61,7 @@
         const resultDiv = document.getElementById("invoke-result");
 
         try {
-          await exampleModule.invoke('setValue', { key, value });
+          await storageModule.invoke('setValue', { key, value });
           resultDiv.innerHTML = "Successfully called setValue!"
         } catch (e) {
           resultDiv.innerHTML = `Error: ${e.message} ${Object.keys(e)}`;
@@ -81,7 +81,7 @@
             return;
           }
 
-          const subscription = exampleModule.invoke('observeValue', { key, isStream: true })
+          const subscription = storageModule.invoke('observeValue', { key, isStream: true })
             .subscribe({
               next: ({ result }) => {
                 const elem = document.getElementsByClassName("observe-value")[0];
@@ -106,7 +106,7 @@
     
       (function setLoadedModules() {
         document.getElementById("module-list").innerHTML = `Modules: [${[
-          !!exampleModule && 'ExampleModule'
+          !!storageModule && 'StorageModule'
         ].filter(md => !!md)}]`;
       })()
     </script>

@@ -12,11 +12,11 @@ import WebKit
 class ViewController: UIViewController {
   override func loadView() {
     super.loadView()
-    let module = ExampleModule()
-    let bridge = ExampleModuleBridge(module: module, delegate: self)
+    let storageModule = StorageModule()
+    let storageBridge = StorageModuleBridge(module: storageModule, delegate: self)
     let contentController = WKUserContentController()
     let config = WKWebViewConfiguration()
-    contentController.add(bridge, name: "ExampleModule")
+    contentController.add(storageBridge, name: "StorageModule")
     config.userContentController = contentController
     
     let webView = WKWebView(frame: self.view!.bounds, configuration: config)
@@ -29,7 +29,7 @@ class ViewController: UIViewController {
   }
 }
 
-extension ViewController: BridgeDelegate {
+extension ViewController: StorageBridgeDelegate {
   func evaluateJavaScript(_ javascript: String, completionHandler: ((Any?, Error?) -> Void)?) {
     DispatchQueue.main.async {
       (self.view!.subviews.first(where: {$0 is WKWebView}) as! WKWebView)

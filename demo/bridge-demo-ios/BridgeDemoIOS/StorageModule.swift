@@ -1,5 +1,5 @@
 //
-//  ExampleModule.swift
+//  StorageModule.swift
 //  BridgeDemoIOS
 //
 //  Created by Viethai Pham on 1/4/19.
@@ -9,7 +9,7 @@
 import Foundation
 import RxSwift
 
-final class ExampleModule {
+final class StorageModule {
   private let dispatchQueue: DispatchQueue
   private var storage: [String : Any?]
   private var observers: [String : (Any?) -> Void]

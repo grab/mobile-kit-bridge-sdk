@@ -13,12 +13,12 @@ class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.main_activity)
-    val module = ExampleModule()
-    val moduleBridge = ExampleModuleBridge(this.web_view, module, Gson())
+    val storeModule = StorageModule()
+    val storageBridge = StorageModuleBridge(this.web_view, storeModule, Gson())
 
     this.web_view.apply {
       this.settings.apply { this.javaScriptEnabled = true }
-      this.addJavascriptInterface(moduleBridge, "ExampleModule")
+      this.addJavascriptInterface(storageBridge, "StorageModule")
       this.loadUrl("http://10.0.2.2:8000")
     }
   }

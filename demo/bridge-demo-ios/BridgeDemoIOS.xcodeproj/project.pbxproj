@@ -13,8 +13,8 @@
 		EECE55482251F8920093C8AC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EECE55462251F8920093C8AC /* Main.storyboard */; };
 		EECE554A2251F8930093C8AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EECE55492251F8930093C8AC /* Assets.xcassets */; };
 		EECE554D2251F8930093C8AC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EECE554B2251F8930093C8AC /* LaunchScreen.storyboard */; };
-		EECE55552251F99A0093C8AC /* ExampleModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55542251F99A0093C8AC /* ExampleModule.swift */; };
-		EECE55572251F9A50093C8AC /* ExampleModuleBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55562251F9A50093C8AC /* ExampleModuleBridge.swift */; };
+		EECE55552251F99A0093C8AC /* StorageModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55542251F99A0093C8AC /* StorageModule.swift */; };
+		EECE55572251F9A50093C8AC /* StorageModuleBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55562251F9A50093C8AC /* StorageModuleBridge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,8 +28,8 @@
 		EECE55492251F8930093C8AC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EECE554C2251F8930093C8AC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		EECE554E2251F8930093C8AC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		EECE55542251F99A0093C8AC /* ExampleModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleModule.swift; sourceTree = "<group>"; };
-		EECE55562251F9A50093C8AC /* ExampleModuleBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleModuleBridge.swift; sourceTree = "<group>"; };
+		EECE55542251F99A0093C8AC /* StorageModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageModule.swift; sourceTree = "<group>"; };
+		EECE55562251F9A50093C8AC /* StorageModuleBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageModuleBridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,8 +75,8 @@
 			children = (
 				EECE554E2251F8930093C8AC /* Info.plist */,
 				EECE55422251F8920093C8AC /* AppDelegate.swift */,
-				EECE55542251F99A0093C8AC /* ExampleModule.swift */,
-				EECE55562251F9A50093C8AC /* ExampleModuleBridge.swift */,
+				EECE55542251F99A0093C8AC /* StorageModule.swift */,
+				EECE55562251F9A50093C8AC /* StorageModuleBridge.swift */,
 				EECE55442251F8920093C8AC /* ViewController.swift */,
 				EECE55492251F8930093C8AC /* Assets.xcassets */,
 				EECE554B2251F8930093C8AC /* LaunchScreen.storyboard */,
@@ -216,8 +216,8 @@
 			files = (
 				EECE55452251F8920093C8AC /* ViewController.swift in Sources */,
 				EECE55432251F8920093C8AC /* AppDelegate.swift in Sources */,
-				EECE55552251F99A0093C8AC /* ExampleModule.swift in Sources */,
-				EECE55572251F9A50093C8AC /* ExampleModuleBridge.swift in Sources */,
+				EECE55552251F99A0093C8AC /* StorageModule.swift in Sources */,
+				EECE55572251F9A50093C8AC /* StorageModuleBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
