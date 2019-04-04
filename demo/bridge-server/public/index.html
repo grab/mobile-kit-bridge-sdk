@@ -16,20 +16,31 @@
       <div id="invoke-result">Waiting for some result</div>
       <div id="invoke-count">Invocation count: 0</div>
 
-      <div class="value-container">
+      <div class="storage-container">
         <div class="instruction">Set value</div>
         <input class="set-key key" placeholder="Key" value="DefKey"/>
         <input class="set-value value" onkeyup="setValue()" placeholder="Value"/>
       </div>
 
-      <div class="value-container">
-          <div class="instruction actionable" 
-            onclick="observeValueOrUnsubscribe()">
-            Click to observe
-          </div>
+      <div class="storage-container">
+        <div class="instruction actionable" 
+          onclick="observeValueOrUnsubscribe()">
+          Click to observe
+        </div>
 
-          <input class="observe-key key" placeholder="Key to observe" value="DefKey"/>
-          <div class="observe-value value"></div>
+        <input class="observe-key key" placeholder="Key to observe" value="DefKey"/>
+        <div class="observe-value value"></div>
+      </div>
+
+      <div class="media-container">
+        <div class="instruction actionable">
+          Click to start playing video
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-line"></div>
+          <div class="progress-bar"></div>
+        </div>
       </div>
     </div>
 
