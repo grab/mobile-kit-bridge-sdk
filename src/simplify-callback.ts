@@ -82,16 +82,16 @@ function streamCallback(
       const callbackName = callbackNameFunc();
       let subscription: Subscription;
 
-      globalObject[callbackName] = (
-        data: CallbackResult | StreamEventResult
-      ) => {
+      globalObject[callbackName] = (data: CallbackResult) => {
         if (isType<CallbackResult>(data, 'status_code')) {
-          handlers && handlers.next && handlers.next(data);
-        } else {
-          switch (data.event) {
-            case StreamEvent.STREAM_TERMINATED:
-              subscription.unsubscribe();
-              break;
+          if (isType<StreamEventResult>(data.result, 'event')) {
+            switch (data.result.event) {
+              case StreamEvent.STREAM_TERMINATED:
+                subscription.unsubscribe();
+                break;
+            }
+          } else {
+            handlers && handlers.next && handlers.next(data);
           }
         }
       };

@@ -71,5 +71,5 @@ export function isType<T, K extends StringKeys<T> = StringKeys<T>>(
   ...keys: K[]
 ): object is T {
   const objectKeys = getObjectKeys(object);
-  return keys.every(key => objectKeys.indexOf(key) >= 0);
+  return !!object && keys.every(key => objectKeys.indexOf(key) >= 0);
 }

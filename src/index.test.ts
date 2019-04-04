@@ -54,7 +54,7 @@ function createTestADRModule(globalObject: any) {
         } else {
           clearInterval(intervalID);
         }
-      },                             interval);
+      }, interval);
     },
     observeGetSomethingWithTerminate(params: string) {
       const {
@@ -63,8 +63,11 @@ function createTestADRModule(globalObject: any) {
       }: AndroidMethodParameter<{ timeout: number }> = JSON.parse(params);
 
       setTimeout(() => {
-        globalObject[callback]({ event: StreamEvent.STREAM_TERMINATED });
-      },         timeout);
+        globalObject[callback]({
+          result: { event: StreamEvent.STREAM_TERMINATED },
+          status_code: 200
+        });
+      }, timeout);
     },
     throwError(params: string) {
       const {
@@ -129,7 +132,8 @@ function createTestIOSModule(globalObject: any) {
           setTimeout(
             () => {
               globalObject[callback]({
-                event: StreamEvent.STREAM_TERMINATED
+                result: { event: StreamEvent.STREAM_TERMINATED },
+                status_code: 200
               });
             },
             parameters.timeout as number
@@ -231,7 +235,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       expect(streamedVals).toHaveLength(length);
       expect([...new Set(streamedVals)]).toHaveLength(length);
       done();
-    },         timeout);
+    }, timeout);
   }
 
   function test_moduleMethod_withTerminatingStream(
@@ -261,7 +265,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       expect(completed).toBeTruthy();
       expect(subscription.isUnsubscribed()).toBeTruthy();
       done();
-    },         timeout);
+    }, timeout);
   }
 
   async function test_moduleMethodStream_shouldBeIdempotent(
@@ -373,7 +377,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 });
 
 describe('Utility functions should work correctly', () => {
-  it.only('Data stream should support Promise-style chaining', async done => {
+  it('Data stream should support Promise-style chaining', async done => {
     // Setup
     let currentTick = 0;
 
@@ -384,7 +388,7 @@ describe('Utility functions should work correctly', () => {
         handlers &&
           handlers.next &&
           handlers.next({ result: currentTick, error: null, status_code: 200 });
-      },                             100);
+      }, 100);
 
       return createSubscription(() => {
         clearInterval(intervalID);
@@ -402,6 +406,6 @@ describe('Utility functions should work correctly', () => {
       expect(status_code).toEqual(200);
       expect(currentTick).toEqual(1);
       done();
-    },         500);
+    }, 500);
   });
 });
