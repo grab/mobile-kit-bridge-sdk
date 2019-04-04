@@ -92,7 +92,7 @@
      */
     function isType(object, ...keys) {
         const objectKeys = getObjectKeys(object);
-        return keys.every(key => objectKeys.indexOf(key) >= 0);
+        return !!object && keys.every(key => objectKeys.indexOf(key) >= 0);
     }
 
     (function (StreamEvent) {
@@ -134,13 +134,15 @@
             let subscription;
             globalObject[callbackName] = (data) => {
                 if (isType(data, 'status_code')) {
-                    handlers && handlers.next && handlers.next(data);
-                }
-                else {
-                    switch (data.event) {
-                        case exports.StreamEvent.STREAM_TERMINATED:
-                            subscription.unsubscribe();
-                            break;
+                    if (isType(data.result, 'event')) {
+                        switch (data.result.event) {
+                            case exports.StreamEvent.STREAM_TERMINATED:
+                                subscription.unsubscribe();
+                                break;
+                        }
+                    }
+                    else {
+                        handlers && handlers.next && handlers.next(data);
                     }
                 }
             };
