@@ -94,7 +94,7 @@
 .progress-container > .progress-bar {
   background: grey;
   height: 100%;
-  left: 0%;
+  left: calc(0% - 8px);
   position: absolute;
   width: 16px;
 }

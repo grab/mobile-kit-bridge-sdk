@@ -3,8 +3,10 @@ package com.viethai.demo
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import com.google.gson.Gson
-import io.reactivex.BackpressureStrategy
 import io.reactivex.Flowable
+import io.reactivex.disposables.Disposables
+import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.CountDownLatch
 
 /** Created by viethai.pham on 4/4/19 */
 open class BaseModuleBridge(private val webView: WebView, protected val gson: Gson) {
@@ -24,14 +26,6 @@ open class BaseModuleBridge(private val webView: WebView, protected val gson: Gs
     }
   }
 
-  protected fun isCallbackAvailableStream(callback: String): Flowable<Boolean> {
-    return Flowable.create({ emitter ->
-      this@BaseModuleBridge.isCallbackAvailable(callback) {
-        emitter.onNext(it); emitter.onComplete()
-      }
-    }, BackpressureStrategy.BUFFER)
-  }
-
   @SuppressLint("NewApi")
   protected fun sendResponse(request: Request, response: Any, cb: (() -> Unit)? = null) {
     val responseString = this.gson.toJson(response)
@@ -43,11 +37,35 @@ open class BaseModuleBridge(private val webView: WebView, protected val gson: Gs
     }
   }
 
-  protected fun sendResponseStream(request: Request, response: Any): Flowable<Unit> {
-    return Flowable.create({ emitter ->
-      this@BaseModuleBridge.sendResponse(request, response) {
-        emitter.onNext(Unit); emitter.onComplete()
-      }
-    }, BackpressureStrategy.BUFFER)
+  private fun isCallbackAvailableSync(callback: String): Boolean {
+    val latch = CountDownLatch(1)
+    var result = false
+    this.isCallbackAvailable(callback) { result = it; latch.countDown() }
+    latch.await()
+    return result
+  }
+
+  private fun sendResponseSync(request: Request, response: Any) {
+    val latch = CountDownLatch(1)
+    this.sendResponse(request, response) { latch.countDown() }
+    latch.await()
+  }
+
+  protected fun <T> sendStreamResponse(request: Request, stream: Flowable<T>) {
+    var disposable = Disposables.fromAction {  }
+
+    disposable = stream
+      .observeOn(Schedulers.computation())
+      .subscribe({
+        if (this@BaseModuleBridge.isCallbackAvailableSync(request.callback)) {
+          val response = Response(it, null, 200)
+          this@BaseModuleBridge.sendResponseSync(request, response)
+        } else {
+          disposable.dispose()
+        }
+      }, {}, {
+        val response = BaseModuleBridge.Response(BaseModuleBridge.StreamEvent.Complete, null, 200)
+        this@BaseModuleBridge.sendResponse(request, response)
+      })
   }
 }

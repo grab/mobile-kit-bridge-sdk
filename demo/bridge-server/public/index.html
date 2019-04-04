@@ -131,7 +131,7 @@
                   if (typeof elapsed === 'number' && typeof total === 'number') {
                     setResultMessage(`Playback: elapsed ${elapsed} / ${total}`);
                     const progress = elapsed / total;
-                    progressBar.style.left = `${progress * 100}%`;
+                    progressBar.style.left = `calc(${progress * 100}% - 8px)`;
                   } else if (!!data.result.type) {
                     setResultMessage(`Playback: event ${data.result.type}`);
                   }
