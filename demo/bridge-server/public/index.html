@@ -7,6 +7,7 @@
     <script type="text/javascript" src="bridgeSDK.min.js"></script>
 
     <script> 
+      window.bridgeSDK.wrapModule(window, 'MediaModule');
       window.bridgeSDK.wrapModule(window, 'StorageModule');
     </script>
   </head>
@@ -23,8 +24,7 @@
       </div>
 
       <div class="storage-container">
-        <div class="instruction actionable" 
-          onclick="observeValueOrUnsubscribe()">
+        <div class="instruction actionable" onclick="observeValueOrUnsubscribe()">
           Click to observe
         </div>
 
@@ -33,8 +33,8 @@
       </div>
 
       <div class="media-container">
-        <div class="instruction actionable">
-          Start video
+        <div class="instruction actionable" onclick="playVideoStream()">
+          Play video
         </div>
 
         <div class="progress-container">
@@ -45,8 +45,9 @@
     </div>
 
     <script>
-      const subscriptions = {};
+      const mediaModule = window.MediaModule;
       const storageModule = window.StorageModule;
+      const resultDiv = document.getElementById("invoke-result");
       let invocationCount = 0;
 
       function incrementInvocationCount() {
@@ -55,60 +56,105 @@
         document.getElementById('invoke-count').innerHTML = newMessage;
       }
 
+      function setResultMessage(message) {
+        resultDiv.innerHTML = `${message}`;
+      }
+
+      function setResultError(error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+      }
+
       async function setValue() {
         const key = document.getElementsByClassName("set-key")[0].value;
         const value = document.getElementsByClassName("set-value")[0].value;
-        const resultDiv = document.getElementById("invoke-result");
 
         try {
           await storageModule.invoke('setValue', { key, value });
-          resultDiv.innerHTML = "Successfully called setValue!"
+          setResultMessage("Successfully called setValue!")
         } catch (e) {
-          resultDiv.innerHTML = `Error: ${e.message} ${Object.keys(e)}`;
+          setResultError(e);
         } finally {
           incrementInvocationCount();
         }
       }
 
-      async function observeValueOrUnsubscribe() {
+      const observeValueOrUnsubscribe = (function () {
+        let subscription = null;
         const instructionDiv = document.getElementsByClassName("instruction")[1];
         const key = document.getElementsByClassName("observe-key")[0].value;
-        const resultDiv = document.getElementById("invoke-result");
 
-        try {
-          if (!!subscriptions[key]) {
-            subscriptions[key].unsubscribe();
-            return;
+        return async function() {
+          try {
+            if (!!subscription) {
+              subscription.unsubscribe();
+              subscription = null;
+              return;
+            }
+
+            subscription = storageModule.invoke('observeValue', { key, isStream: true })
+              .subscribe({
+                next: ({ result }) => {
+                  const elem = document.getElementsByClassName("observe-value")[0];
+                  elem.innerHTML = result;
+                },
+                complete: () => {
+                  delete subscriptions[key];
+                  setResultMessage(`Successfully unsubscribed for key ${key}!`);
+                  instructionDiv.innerHTML = "Click to observe";
+                }
+              });
+
+            instructionDiv.innerHTML = "Click to unsub"
+            setResultMessage(`Successfully subscribed for key ${key}!`);
+          } catch (e) {
+            setResultError(e);
+          } finally {
+            incrementInvocationCount();
           }
-
-          const subscription = storageModule.invoke('observeValue', { key, isStream: true })
-            .subscribe({
-              next: ({ result }) => {
-                const elem = document.getElementsByClassName("observe-value")[0];
-                elem.innerHTML = result;
-              },
-              complete: () => {
-                delete subscriptions[key];
-                resultDiv.innerHTML = `Successfully unsubscribed for key ${key}!`;
-                instructionDiv.innerHTML = "Click to observe";
-              }
-            });
-
-          subscriptions[key] = subscription;
-          resultDiv.innerHTML = `Successfully subscribed for key ${key}!`;
-          instructionDiv.innerHTML = "Click to unsub"
-        } catch (e) {
-          resultDiv.innerHTML = `Error: ${e.message} ${Object.keys(e)}`;
-        } finally {
-          incrementInvocationCount();
         }
-      }
+      })();
+
+      const playVideoStream = (function() {
+        const progressBar = document.getElementsByClassName("progress-bar")[0];
+        let subscription = null;
+
+        return function() {
+          !!subscription && subscription.unsubscribe();
+
+          try {
+            subscription = mediaModule.invoke('playVideo', { isStream: true }).subscribe({
+              next: data => {
+                if (data.result) {
+                  const elapsed = data.result.elapsed;
+                  const total = data.result.total;
+
+                  if (typeof elapsed === 'number' && typeof total === 'number') {
+                    setResultMessage(`Playback: elapsed ${elapsed} / ${total}`);
+                    const progress = elapsed / total;
+                    progressBar.style.left = `${progress * 100}%`;
+                  } else if (!!data.event) {
+                    setResultMessage(`Playback: event ${event}`);
+                  }
+                }
+              },
+              complete: console.log,
+            })
+
+            setResultMessage(`Successfully started video playback!`);
+          } catch (e) {
+            setResultError(e);
+          } finally {
+            incrementInvocationCount();
+          }
+        }
+      })();
     
       (function setLoadedModules() {
         document.getElementById("module-list").innerHTML = `Modules: [${[
+          !!mediaModule && 'MediaModule',
           !!storageModule && 'StorageModule'
         ].filter(md => !!md)}]`;
-      })()
+      })();
     </script>
   </body>
 </html>
