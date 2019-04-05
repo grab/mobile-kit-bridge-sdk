@@ -7,9 +7,9 @@ SDK for mobile module bridge to offer unified method signatures for Android/iOS.
 For example:
 
 ```javascript
-const identifier = await window.LocaleKit.invoke('getLocaleIdentifier');
-await window.AnalyticsModule.invoke('track', { analyticsEvent: event })
-await window.MediaKit.invoke('playDRMContent', { contentURL, license })
+const identifier = await window.WrappedLocaleKit.invoke('getLocaleIdentifier');
+await window.WrappedAnalyticsModule.invoke('track', { analyticsEvent: event })
+await window.WrappedMediaKit.invoke('playDRMContent', { contentURL, license })
 ```
 
 All module methods will have `callback` as one of the parameters:
@@ -55,8 +55,8 @@ The name of the callback always starts with:
 For e.g.:
 
 ```javascript
-AnalyticsModule.track -> AnalyticsModule_trackCallback
-MediaKit.playDRMContent -> MediaKit_playDRMContentCallback
+AnalyticsModule.track -> WrappedAnalyticsModule_trackCallback
+MediaKit.playDRMContent -> WrappedMediaKit_playDRMContentCallback
 ```
 
 This callback style allows us to pass errors to the partner app that they can handle in case something goes wrong.
@@ -66,7 +66,7 @@ This callback style allows us to pass errors to the partner app that they can ha
 All module methods whose parameters include a flag `isStream: true` are assumed to support streaming, e.g.:
 
 ```javascript
-const subscription = window.MediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({
+const subscription = window.WrappedMediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({
   next: console.log,
   complete: console.log,
 });
@@ -78,7 +78,7 @@ Note that `DataStream` always creates new streams whenever `subscribe` is called
 
 ```javascript
 const playObservable = new Observable(sub => {
-  const subscription = window.MediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({ 
+  const subscription = window.WrappedMediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({ 
     next: data => sub.next(data),
     complete: () => sub.complete(),
   });
@@ -92,7 +92,7 @@ playObservable.pipe(filter(...), map(...)).subscribe(...);
 `DataStream` also supports `Promise`-style chaining and `async-await`. Instead of getting values over time, this will simply deliver the first value that arrives:
 
 ```javascript
-const { result, error, status_code } = await window.MediaKit.invoke('observePlayDRMContent', { isStream: true, ... });
+const { result, error, status_code } = await window.WrappedMediaKit.invoke('observePlayDRMContent', { isStream: true, ... });
 ```
 
 ## Data format

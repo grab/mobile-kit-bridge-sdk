@@ -73,3 +73,12 @@ export function isType<T, K extends StringKeys<T> = StringKeys<T>>(
   const objectKeys = getObjectKeys(object);
   return !!object && keys.every(key => objectKeys.indexOf(key) >= 0);
 }
+
+/**
+ * Wrap a module name to mark it as wrapped.
+ * @param moduleName The original module name.
+ * @return The wrapped module name.
+ */
+export function wrapModuleName(moduleName: string) {
+  return `Wrapped${moduleName}`;
+}
