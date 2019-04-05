@@ -10,10 +10,6 @@ import Foundation
 import RxSwift
 import WebKit
 
-protocol ResponseType {
-  func toDictionary() -> [String : Any?]
-}
-
 final class StorageModuleBridge: BaseModuleBridge {
   private let module: StorageModule
   
