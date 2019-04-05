@@ -4,7 +4,7 @@ declare type Params = Readonly<{
     /** Check whether a stream should be returned instead of a Promise */
     isStream: unknown;
     /** The method being wrapped. */
-    funcToWrap: (callbackName: string) => () => unknown;
+    funcToWrap: (callbackName: string) => unknown;
     /** Function to create the name of the callback that will receive results. */
     callbackNameFunc: () => string;
 }>;

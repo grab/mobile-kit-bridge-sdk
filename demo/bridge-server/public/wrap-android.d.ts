@@ -20,8 +20,8 @@ declare type WrappedAndroidModule<Original extends AndroidModule> = Readonly<{
  * Wrap an Android module.
  * @param globalObject The global object - generally window.
  * @param moduleName The name of the module that owns the method.
- * @param moduleObj The Android module being wrapped.
+ * @param moduleObjFunc Function to get the current module object.
  * @return The wrapped module.
  */
-export declare function wrapAndroidModule<Module extends AndroidModule>(globalObject: any, moduleName: string, moduleObj: Module): WrappedAndroidModule<Module>;
+export declare function wrapAndroidModule<Module extends AndroidModule>(globalObject: any, moduleName: string, moduleObjFunc: () => Module): WrappedAndroidModule<Module>;
 export {};

@@ -15,8 +15,8 @@ declare type WrappedIOSModule<MethodKeys extends string> = Readonly<{
  * Wrap an iOS module.
  * @param globalObject The global object - generally window.
  * @param moduleName The name of the module that owns the method.
- * @param moduleObj The iOS module being wrapped.
+ * @param moduleObjFunc Function to get the current module object.
  * @return The wrapped module.
  */
-export declare function wrapIOSModule<MethodKeys extends string>(globalObject: any, moduleName: string, moduleObj: IOSModule<MethodKeys>): WrappedIOSModule<MethodKeys>;
+export declare function wrapIOSModule<MethodKeys extends string>(globalObject: any, moduleName: string, moduleObjFunc: () => IOSModule<MethodKeys>): WrappedIOSModule<MethodKeys>;
 export {};

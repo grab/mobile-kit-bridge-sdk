@@ -5,9 +5,11 @@ export declare type DefaultParameters = Readonly<{
     isStream: unknown;
 }>;
 /** Method parameters for native methods. */
-export declare type NativeParameter<MethodKey, Params> = Readonly<{
+export declare type NativeParameter<Params = {
+    [K: string]: unknown;
+}> = Readonly<{
     /** The method name. */
-    method: MethodKey;
+    method: string;
     /** The method parameters. */
     parameters: Params & DefaultParameters;
     /** The name of the callback. */

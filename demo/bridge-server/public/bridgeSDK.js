@@ -126,7 +126,7 @@
                  */
                 delete globalObject[callbackName];
             };
-            funcToWrap(callbackName)();
+            funcToWrap(callbackName);
         });
     }
     /**
@@ -154,7 +154,7 @@
                     }
                 }
             };
-            funcToWrap(callbackName)();
+            funcToWrap(callbackName);
             subscription = createSubscription(() => {
                 /**
                  * Native should check for the existence of this callback every time a
@@ -184,51 +184,14 @@
     }
 
     /**
-     * Wrap an Android module.
+     * Wrap a generic module. This should work for both Android and iOS-injected
+     * Javascript interfaces.
      * @param globalObject The global object - generally window.
      * @param moduleName The name of the module that owns the method.
-     * @param moduleObj The Android module being wrapped.
+     * @param moduleMethodFunc Function to execute the related module method.
      * @return The wrapped module.
      */
-    function wrapAndroidModule(globalObject, moduleName, moduleObj) {
-        const wrappedModule = getObjectKeys(moduleObj)
-            .filter(key => typeof moduleObj[key] === 'function')
-            .map((key) => {
-            let currentRequestID = 0;
-            const callbackNameFunc = () => {
-                const requestID = `${currentRequestID}`;
-                currentRequestID += 1;
-                return getCallbackName({ moduleName, requestID, funcName: key });
-            };
-            return {
-                [key]: (params) => {
-                    return simplifyCallback(globalObject, {
-                        callbackNameFunc,
-                        funcNameToWrap: key,
-                        isStream: params.isStream,
-                        funcToWrap: callback => moduleObj[key].bind(moduleObj, JSON.stringify({
-                            callback,
-                            method: key,
-                            parameters: params
-                        }))
-                    });
-                }
-            };
-        })
-            .reduce((acc, item) => (Object.assign({}, acc, item)), {});
-        return {
-            invoke: (method, params) => wrappedModule[method](params)
-        };
-    }
-
-    /**
-     * Wrap an iOS module.
-     * @param globalObject The global object - generally window.
-     * @param moduleName The name of the module that owns the method.
-     * @param moduleObj The iOS module being wrapped.
-     * @return The wrapped module.
-     */
-    function wrapIOSModule(globalObject, moduleName, moduleObj) {
+    function wrapGenericModule(globalObject, moduleName, moduleMethodFunc) {
         const methodRequestIDMap = {};
         return {
             invoke: (method, params) => {
@@ -240,11 +203,7 @@
                         methodRequestIDMap[method] = requestID + 1;
                         return getCallbackName({ moduleName, requestID, funcName: method });
                     },
-                    funcToWrap: callback => moduleObj.postMessage.bind(moduleObj, {
-                        callback,
-                        method,
-                        parameters: params
-                    })
+                    funcToWrap: callback => moduleMethodFunc({ callback, method, parameters: params })
                 });
             }
         };
@@ -256,18 +215,16 @@
      * @param moduleName The name of the module being wrapped.
      */
     function wrapModule(globalObject, moduleName) {
-        if (!!globalObject[moduleName]) {
-            const androidModule = globalObject[moduleName];
-            const wrappedModule = wrapAndroidModule(window, moduleName, androidModule);
-            globalObject[wrapModuleName(moduleName)] = wrappedModule;
-        }
-        else if (!!globalObject.webkit &&
-            !!globalObject.webkit.messageHandlers &&
-            !!globalObject.webkit.messageHandlers[moduleName]) {
-            const iOSModule = globalObject.webkit.messageHandlers[moduleName];
-            const wrappedModule = wrapIOSModule(globalObject, moduleName, iOSModule);
-            globalObject[wrapModuleName(moduleName)] = wrappedModule;
-        }
+        globalObject[wrapModuleName(moduleName)] = wrapGenericModule(globalObject, moduleName, params => {
+            if (!!globalObject[moduleName]) {
+                globalObject[moduleName][params.method](JSON.stringify(params));
+            }
+            else if (!!globalObject.webkit &&
+                !!globalObject.webkit.messageHandlers &&
+                !!globalObject.webkit.messageHandlers[moduleName]) {
+                globalObject.webkit.messageHandlers[moduleName].postMessage(params);
+            }
+        });
     }
 
     exports.wrapModule = wrapModule;
