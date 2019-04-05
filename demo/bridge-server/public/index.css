@@ -20,6 +20,8 @@
 #root > #module-list, #root > #invoke-result, #root > #invoke-count {
   display: flex;
   justify-content: center;
+  text-align: center;
+  word-break: break-all;
 }
 
 #root > .storage-container, #root > .media-container, #root > .debug-container {

@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>JS bridge SDK</title>
     <link rel="stylesheet" href="index.css">
     <script type="text/javascript" src="bridgeSDK.min.js"></script>
@@ -51,8 +52,8 @@
     </div>
 
     <script>
-      const mediaModule = window.MediaModule;
-      const storageModule = window.StorageModule;
+      const mediaModule = window.WrappedMediaModule;
+      const storageModule = window.WrappedStorageModule;
       const resultDiv = document.getElementById("invoke-result");
       let invocationCount = 0;
 
@@ -163,8 +164,20 @@
     
       (function setLoadedModules() {
         document.getElementById("module-list").innerHTML = `Modules: [${[
-          !!mediaModule && 'MediaModule',
-          !!storageModule && 'StorageModule'
+          !!window.MediaModule && 'AndroidMediaModule',
+          !!window.StorageModule && 'AndroidStorageModule',
+          ...(function() {
+            if (window.webkit && window.webkit.messageHandlers) {
+              return [
+                !!window.webkit.messageHandlers.MediaModule && 'IOSMediaModule',
+                !!window.webkit.messageHandlers.StorageModule && 'IOSStorageModule'
+              ];
+            } else {
+              return [];
+            }
+          })(),
+          !!mediaModule && 'WrappedMediaModule',
+          !!storageModule && 'WrappedStorageModule',
         ].filter(md => !!md)}]`;
       })();
     </script>
