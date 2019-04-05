@@ -42,6 +42,12 @@
           <div class="progress-bar"></div>
         </div>
       </div>
+
+      <div class="debug-container">
+        <div class="instruction actionable" onclick="sleepForSomeTime()">
+          Sleep a bit
+        </div>
+      </div>
     </div>
 
     <script>
@@ -148,6 +154,12 @@
           }
         }
       })();
+
+      function sleepForSomeTime() {
+        const timeToSleep = 5 * 1000;
+        var currentTime = new Date().getTime();
+        while (currentTime + timeToSleep >= new Date().getTime()) {}
+      }
     
       (function setLoadedModules() {
         document.getElementById("module-list").innerHTML = `Modules: [${[

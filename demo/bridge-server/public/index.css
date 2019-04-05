@@ -22,7 +22,7 @@
   justify-content: center;
 }
 
-#root > .storage-container, #root > .media-container {
+#root > .storage-container, #root > .media-container, #root > .debug-container {
   display: flex;
 }
 
@@ -74,7 +74,6 @@
 }
 
 .media-container > .instruction {
-  float: right;
   width: calc((100% - 32px) / 3);
 }
 
@@ -97,4 +96,10 @@
   left: calc(0% - 8px);
   position: absolute;
   width: 16px;
+}
+
+/* ################################# Debug ################################# */
+
+.debug-container > .instruction {
+  width: calc((100% - 32px) / 3);
 }
