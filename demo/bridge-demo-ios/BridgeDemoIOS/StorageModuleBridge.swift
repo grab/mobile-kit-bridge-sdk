@@ -10,55 +10,20 @@ import Foundation
 import RxSwift
 import WebKit
 
-protocol StorageBridgeDelegate: class {
-  func evaluateJavaScript(_ javascript: String, completionHandler: ((Any?, Error?) -> Void)?)
-}
-
 protocol ResponseType {
   func toDictionary() -> [String : Any?]
 }
 
-final class StorageModuleBridge: NSObject {
+final class StorageModuleBridge: BaseModuleBridge {
   private let module: StorageModule
-  private weak var delegate: StorageBridgeDelegate?
   
-  init(module: StorageModule, delegate: StorageBridgeDelegate) {
+  init(module: StorageModule, delegate: BridgeDelegate) {
     self.module = module
-    self.delegate = delegate
-  }
-  
-  private func isCallbackAvailable(callback: String, cb: @escaping (Bool) -> Void) {
-    let javascript = "!!window.\(callback)"
-    
-    self.delegate?.evaluateJavaScript(javascript) {result, error in
-      cb((result as? Int).map({$0 == 1}) ?? false)
-    }
-  }
-  
-  private func sendResult(response: ResponseType, callback: String) {
-    let dict = response.toDictionary()
-    let data = try! JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
-    let responseString = String(data: data, encoding: .utf8)!
-    let callbackString = "window.\(callback)(\(responseString))"
-    self.delegate?.evaluateJavaScript(callbackString, completionHandler: nil)
+    super.init(delegate)
   }
 }
 
 extension StorageModuleBridge: WKScriptMessageHandler {
-  private struct CallbackResponse: ResponseType {
-    let result: Any?
-    let error: Any?
-    let status_code: Int
-    
-    func toDictionary() -> [String : Any?] {
-      return [
-        "result": self.result,
-        "error": self.error,
-        "status_code": self.status_code
-      ]
-    }
-  }
-  
   func userContentController(_ userContentController: WKUserContentController,
                              didReceive message: WKScriptMessage) {
     let params = message.body as! [String : Any]

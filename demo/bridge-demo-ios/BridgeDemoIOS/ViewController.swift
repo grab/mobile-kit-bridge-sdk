@@ -29,7 +29,7 @@ class ViewController: UIViewController {
   }
 }
 
-extension ViewController: StorageBridgeDelegate {
+extension ViewController: BridgeDelegate {
   func evaluateJavaScript(_ javascript: String, completionHandler: ((Any?, Error?) -> Void)?) {
     DispatchQueue.main.async {
       (self.view!.subviews.first(where: {$0 is WKWebView}) as! WKWebView)

@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		925CE38C63754A83B1E4DACF /* Pods_BridgeDemoIOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CCDA3D579883E05A7E0C9374 /* Pods_BridgeDemoIOS.framework */; };
+		EE5F7B512256F02200553BA4 /* MediaModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE5F7B502256F02200553BA4 /* MediaModule.swift */; };
+		EE5F7B532256F1FF00553BA4 /* BaseModuleBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE5F7B522256F1FF00553BA4 /* BaseModuleBridge.swift */; };
 		EECE55432251F8920093C8AC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55422251F8920093C8AC /* AppDelegate.swift */; };
 		EECE55452251F8920093C8AC /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55442251F8920093C8AC /* ViewController.swift */; };
 		EECE55482251F8920093C8AC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EECE55462251F8920093C8AC /* Main.storyboard */; };
@@ -21,6 +23,8 @@
 		45902DB2AE8923E715D804E7 /* Pods-BridgeDemoIOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BridgeDemoIOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-BridgeDemoIOS/Pods-BridgeDemoIOS.debug.xcconfig"; sourceTree = "<group>"; };
 		9EF3EA2588231F558CF5D7A4 /* Pods-BridgeDemoIOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BridgeDemoIOS.release.xcconfig"; path = "Pods/Target Support Files/Pods-BridgeDemoIOS/Pods-BridgeDemoIOS.release.xcconfig"; sourceTree = "<group>"; };
 		CCDA3D579883E05A7E0C9374 /* Pods_BridgeDemoIOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BridgeDemoIOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE5F7B502256F02200553BA4 /* MediaModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaModule.swift; sourceTree = "<group>"; };
+		EE5F7B522256F1FF00553BA4 /* BaseModuleBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseModuleBridge.swift; sourceTree = "<group>"; };
 		EECE553F2251F8920093C8AC /* BridgeDemoIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BridgeDemoIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EECE55422251F8920093C8AC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EECE55442251F8920093C8AC /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -81,6 +85,8 @@
 				EECE55492251F8930093C8AC /* Assets.xcassets */,
 				EECE554B2251F8930093C8AC /* LaunchScreen.storyboard */,
 				EECE55462251F8920093C8AC /* Main.storyboard */,
+				EE5F7B502256F02200553BA4 /* MediaModule.swift */,
+				EE5F7B522256F1FF00553BA4 /* BaseModuleBridge.swift */,
 			);
 			path = BridgeDemoIOS;
 			sourceTree = "<group>";
@@ -214,8 +220,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE5F7B512256F02200553BA4 /* MediaModule.swift in Sources */,
 				EECE55452251F8920093C8AC /* ViewController.swift in Sources */,
 				EECE55432251F8920093C8AC /* AppDelegate.swift in Sources */,
+				EE5F7B532256F1FF00553BA4 /* BaseModuleBridge.swift in Sources */,
 				EECE55552251F99A0093C8AC /* StorageModule.swift in Sources */,
 				EECE55572251F9A50093C8AC /* StorageModuleBridge.swift in Sources */,
 			);
