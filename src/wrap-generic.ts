@@ -5,7 +5,10 @@ import { DefaultParameters, getCallbackName, NativeParameter } from './utils';
 type WrappedModule = Readonly<{
   invoke: (
     method: string,
-    params: Readonly<{ [K: string]: unknown }> & DefaultParameters
+    params:
+      | (Readonly<{ [K: string]: unknown }> & DefaultParameters)
+      | undefined
+      | null
   ) => unknown;
 }>;
 
@@ -28,14 +31,18 @@ export function wrapGenericModule(
     invoke: (method, params) => {
       return simplifyCallback(globalObject, {
         funcNameToWrap: method,
-        isStream: params.isStream,
+        isStream: !!params && !!params.isStream,
         callbackNameFunc: () => {
           const requestID = methodRequestIDMap[method] || 0;
           methodRequestIDMap[method] = requestID + 1;
           return getCallbackName({ moduleName, requestID, funcName: method });
         },
         funcToWrap: callback =>
-          moduleMethodFunc({ callback, method, parameters: params })
+          moduleMethodFunc({
+            callback,
+            method,
+            parameters: params !== undefined && params !== null ? params : {}
+          })
       });
     }
   };

@@ -10,7 +10,7 @@ export type NativeParameter<Params = { [K: string]: unknown }> = Readonly<{
   method: string;
 
   /** The method parameters. */
-  parameters: Params & DefaultParameters;
+  parameters: Params;
 
   /** The name of the callback. */
   callback: string;

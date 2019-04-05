@@ -16,6 +16,21 @@ describe('Module wrappers should wrap platform modules correctly', () => {
   function createTestADRModule(globalObject: any) {
     return {
       name: 'TestADRModule',
+      doSomethingWithoutParameter(params: string) {
+        const { callback }: NativeParameter<{}> = JSON.parse(params);
+        globalObject[callback]({ result: null, error: null, status_code: 200 });
+      },
+      doSomethingWithFalsyParameter(params: string) {
+        const { callback, parameters }: NativeParameter<unknown> = JSON.parse(
+          params
+        );
+
+        globalObject[callback]({
+          result: parameters,
+          error: null,
+          status_code: 200
+        });
+      },
       getSomething(params: string) {
         const {
           parameters: { param1, param2 },
@@ -86,6 +101,24 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       name: 'TestIOSModule',
       postMessage: ({ method, parameters, callback }: NativeParameter) => {
         switch (method) {
+          case 'doSomethingWithoutParameter':
+            globalObject[callback]({
+              result: null,
+              error: null,
+              status_code: 200
+            });
+
+            break;
+
+          case 'doSomethingWithFalsyParameter':
+            globalObject[callback]({
+              result: parameters,
+              error: null,
+              status_code: 200
+            });
+
+            break;
+
           case 'getSomething':
             globalObject[callback]({
               result: formatResult(parameters.param1, parameters.param2),
@@ -141,6 +174,51 @@ describe('Module wrappers should wrap platform modules correctly', () => {
         }
       }
     };
+  }
+
+  async function test_invokeMethodWithoutParameter_shouldWork(
+    globalObject: any,
+    moduleName: string
+  ) {
+    // Setup
+    const wrappedName = wrapModuleName(moduleName);
+
+    // When
+    const result1 = await globalObject[wrappedName].invoke(
+      'doSomethingWithoutParameter'
+    );
+
+    const result2 = await globalObject[wrappedName].invoke(
+      'doSomethingWithoutParameter',
+      null
+    );
+
+    // Then
+    expect(result1).toEqual({ result: null, error: null, status_code: 200 });
+    expect(result2).toEqual({ result: null, error: null, status_code: 200 });
+  }
+
+  async function test_invokeMethodWithFalsyParam_shouldWork(
+    globalObject: any,
+    moduleName: string
+  ) {
+    // Setup
+    const wrappedName = wrapModuleName(moduleName);
+
+    // When
+    const result1 = await globalObject[wrappedName].invoke(
+      'doSomethingWithFalsyParameter',
+      0
+    );
+
+    const result2 = await globalObject[wrappedName].invoke(
+      'doSomethingWithFalsyParameter',
+      ''
+    );
+
+    // Then
+    expect(result1).toEqual({ result: 0, error: null, status_code: 200 });
+    expect(result2).toEqual({ result: '', error: null, status_code: 200 });
   }
 
   async function test_moduleMethod_withNormalReturn(
@@ -300,6 +378,24 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     expect(Object.keys(globalObject)).toHaveLength(2);
   }
 
+  // ################################ ANDROID ################################
+
+  it('Should work for Android method without parameters', async () => {
+    const globalObject: any = {};
+    const adr = createTestADRModule(globalObject);
+    globalObject[adr.name] = adr;
+    wrapModule(globalObject, adr.name);
+    await test_invokeMethodWithoutParameter_shouldWork(globalObject, adr.name);
+  });
+
+  it('Should work for Android method with falsy parameters', async () => {
+    const globalObject: any = {};
+    const adr = createTestADRModule(globalObject);
+    globalObject[adr.name] = adr;
+    wrapModule(globalObject, adr.name);
+    await test_invokeMethodWithFalsyParam_shouldWork(globalObject, adr.name);
+  });
+
   it('Should wrap Android method with normal return correctly', async () => {
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -348,6 +444,24 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethodStream_shouldBeIdempotent(globalObject, adr.name);
   });
 
+  // ################################## IOS ##################################
+
+  it('Should work for iOS method without parameters', async () => {
+    const globalObject: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(globalObject);
+    globalObject.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(globalObject, ios.name);
+    await test_invokeMethodWithoutParameter_shouldWork(globalObject, ios.name);
+  });
+
+  it('Should work for iOS method with falsy parameters', async () => {
+    const globalObject: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(globalObject);
+    globalObject.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(globalObject, ios.name);
+    await test_invokeMethodWithFalsyParam_shouldWork(globalObject, ios.name);
+  });
+
   it('Should wrap iOS method with normal return correctly', async () => {
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -364,7 +478,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethod_withError(globalObject, ios.name);
   });
 
-  it('Should correctly call Android method multiple times', async () => {
+  it('Should correctly call iOS method multiple times', async () => {
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
     globalObject.webkit.messageHandlers[ios.name] = ios;
