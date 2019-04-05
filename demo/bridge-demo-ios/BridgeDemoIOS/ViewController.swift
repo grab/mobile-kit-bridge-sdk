@@ -12,10 +12,13 @@ import WebKit
 class ViewController: UIViewController {
   override func loadView() {
     super.loadView()
+    let mediaModule = MediaModule()
+    let mediaBridge = MediaModuleBridge(module: mediaModule, delegate: self)
     let storageModule = StorageModule()
     let storageBridge = StorageModuleBridge(module: storageModule, delegate: self)
     let contentController = WKUserContentController()
     let config = WKWebViewConfiguration()
+    contentController.add(mediaBridge, name: "MediaModule")
     contentController.add(storageBridge, name: "StorageModule")
     config.userContentController = contentController
     

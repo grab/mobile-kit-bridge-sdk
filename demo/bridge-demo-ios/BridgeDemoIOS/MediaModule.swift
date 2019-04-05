@@ -10,24 +10,24 @@ import Foundation
 import RxSwift
 
 public final class MediaModule {
-  public enum PlayEvent {
+  public enum PlayEvent: ResponseType {
     case startVideo
     case stopVideo
-    case progressVideo(Double, Double)
+    case elapsedTime(Int, Int)
     
     private var type: String {
       switch self {
       case .startVideo: return "START_VIDEO"
       case .stopVideo: return "STOP_VIDEO"
-      case .progressVideo: return "PROGRESS_VIDEO"
+      case .elapsedTime: return "ELAPSED_TIME"
       }
     }
     
-    public func toDictionary() -> [String : Any] {
+    public func toDictionary() -> [String : Any?] {
       var dict: [String : Any] = ["type" : self.type]
       
       switch self {
-      case .progressVideo(let elapsed, let total):
+      case .elapsedTime(let elapsed, let total):
         dict["elapsed"] = elapsed
         dict["total"] = total
         
@@ -45,7 +45,7 @@ public final class MediaModule {
     return Observable<Int>
       .interval(1, scheduler: MainScheduler.instance)
       .take(totalTime + 1)
-      .map({.progressVideo(Double($0), Double(totalTime))})
+      .map({.elapsedTime($0, totalTime)})
       .startWith(.startVideo)
       .concat(Observable.just(.stopVideo))
   }

@@ -92,27 +92,31 @@ public class BaseModuleBridge: NSObject {
     return result
   }
   
-  func sendStreamResult(stream: Observable<ResponseType>, callback: String) {
+  func sendStreamResult<R>(stream: Observable<R>, callback: String) where R: ResponseType {
     var disposable = Disposables.create()
     
-    disposable = stream.subscribe(
-      onNext: {[weak self] (data: ResponseType) in
-        guard let this = self else { return }
-        
-        if (this.isCallbackAvailableSync(callback: callback)) {
-          _ = this.sendResultSync(response: data, callback: callback)
-        } else {
-          disposable.dispose()
-        }
-      },
-      onError: {_ in},
-      onCompleted: {[weak self] in
-        guard let this = self else { return }
-        let eventResult = StreamEvent.completed.toDictionary()
-        let response = CallbackResponse(result: eventResult, error: nil, status_code: 200)
-        _ = this.sendResultSync(response: response, callback: callback)
-      },
-      onDisposed: {}
-    )
+    disposable = stream
+      .observeOn(ConcurrentDispatchQueueScheduler(qos: .background))
+      .subscribe(
+        onNext: {[weak self] (data: ResponseType) in
+          guard let this = self else { return }
+          
+          if (this.isCallbackAvailableSync(callback: callback)) {
+            let dict = data.toDictionary()
+            let response = CallbackResponse(result: dict, error: nil, status_code: 200)
+            _ = this.sendResultSync(response: response, callback: callback)
+          } else {
+            disposable.dispose()
+          }
+        },
+        onError: {_ in},
+        onCompleted: {[weak self] in
+          guard let this = self else { return }
+          let eventResult = StreamEvent.completed.toDictionary()
+          let response = CallbackResponse(result: eventResult, error: nil, status_code: 200)
+          _ = this.sendResultSync(response: response, callback: callback)
+        },
+        onDisposed: {}
+      )
   }
 }
