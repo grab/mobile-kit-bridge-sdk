@@ -32,8 +32,7 @@ open class BaseModuleBridge(private val webView: WebView, protected val gson: Gs
 
     this.webView.post {
       val javascript = "javascript:${request.callback}($responseString)"
-      this@BaseModuleBridge.webView.evaluateJavascript(javascript) {}
-      cb?.invoke()
+      this@BaseModuleBridge.webView.evaluateJavascript(javascript) { cb?.invoke() }
     }
   }
 
@@ -45,21 +44,15 @@ open class BaseModuleBridge(private val webView: WebView, protected val gson: Gs
     return result
   }
 
-  private fun sendResponseSync(request: Request, response: Any) {
-    val latch = CountDownLatch(1)
-    this.sendResponse(request, response) { latch.countDown() }
-    latch.await()
-  }
-
   protected fun <T> sendStreamResponse(request: Request, stream: Flowable<T>) {
     var disposable = Disposables.fromAction {  }
 
     disposable = stream
       .observeOn(Schedulers.computation())
-      .subscribe({
+      .subscribe({ data ->
         if (this@BaseModuleBridge.isCallbackAvailableSync(request.callback)) {
-          val response = Response(it, null, 200)
-          this@BaseModuleBridge.sendResponseSync(request, response)
+          val response = Response(data, null, 200)
+          this@BaseModuleBridge.sendResponse(request, response)
         } else {
           disposable.dispose()
         }

@@ -12,7 +12,7 @@ class MediaModule {
   }
 
   fun playVideo(): Flowable<PlayEvent> {
-    val totalTime = 10
+    val totalTime = 5
 
     return Flowable.interval(0, 1, TimeUnit.SECONDS)
       .take(totalTime.toLong() + 1)

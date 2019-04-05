@@ -79,19 +79,6 @@ public class BaseModuleBridge: NSObject {
     self.delegate?.evaluateJavaScript(callbackString, completionHandler: cb)
   }
   
-  func sendResultSync(response: ResponseType, callback: String) -> (Any?, Error?)? {
-    let dispatchGroup = DispatchGroup()
-    var result: (Any?, Error?)? = nil
-    dispatchGroup.enter()
-    
-    self.sendResult(response: response, callback: callback) {(r, e) in
-      result = (r, e); dispatchGroup.leave()
-    }
-    
-    dispatchGroup.wait()
-    return result
-  }
-  
   func sendStreamResult<R>(stream: Observable<R>, callback: String) where R: ResponseType {
     var disposable = Disposables.create()
     
@@ -104,7 +91,7 @@ public class BaseModuleBridge: NSObject {
           if (this.isCallbackAvailableSync(callback: callback)) {
             let dict = data.toDictionary()
             let response = CallbackResponse(result: dict, error: nil, status_code: 200)
-            _ = this.sendResultSync(response: response, callback: callback)
+            _ = this.sendResult(response: response, callback: callback)
           } else {
             disposable.dispose()
           }
@@ -114,7 +101,7 @@ public class BaseModuleBridge: NSObject {
           guard let this = self else { return }
           let eventResult = StreamEvent.completed.toDictionary()
           let response = CallbackResponse(result: eventResult, error: nil, status_code: 200)
-          _ = this.sendResultSync(response: response, callback: callback)
+          _ = this.sendResult(response: response, callback: callback)
         },
         onDisposed: {}
       )
