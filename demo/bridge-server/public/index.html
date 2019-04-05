@@ -94,7 +94,6 @@
           try {
             if (!!subscription) {
               subscription.unsubscribe();
-              subscription = null;
               return;
             }
 
@@ -105,7 +104,7 @@
                   elem.innerHTML = result;
                 },
                 complete: () => {
-                  delete subscriptions[key];
+                  subscription = null;
                   setResultMessage(`Successfully unsubscribed for key ${key}!`);
                   instructionDiv.innerHTML = "Click to observe";
                 }

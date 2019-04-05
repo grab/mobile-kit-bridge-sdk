@@ -4,145 +4,145 @@ import { createDataStream, createSubscription } from './subscription';
 import { NativeParameter, wrapModuleName } from './utils';
 import { wrapModule } from './wrap-global';
 
-function formatResult(param1: unknown, param2: unknown) {
-  return `${param1}-${param2}`;
-}
+describe('Module wrappers should wrap platform modules correctly', () => {
+  function formatResult(param1: unknown, param2: unknown) {
+    return `${param1}-${param2}`;
+  }
 
-function formatError(param: unknown) {
-  return `Error: ${param}`;
-}
+  function formatError(param: unknown) {
+    return `Error: ${param}`;
+  }
 
-function createTestADRModule(globalObject: any) {
-  return {
-    name: 'TestADRModule',
-    getSomething(params: string) {
-      const {
-        parameters: { param1, param2 },
-        callback
-      }: NativeParameter<{
-        param1: string;
-        param2: string;
-      }> = JSON.parse(params);
+  function createTestADRModule(globalObject: any) {
+    return {
+      name: 'TestADRModule',
+      getSomething(params: string) {
+        const {
+          parameters: { param1, param2 },
+          callback
+        }: NativeParameter<{
+          param1: string;
+          param2: string;
+        }> = JSON.parse(params);
 
-      globalObject[callback]({
-        result: formatResult(param1, param2),
-        error: null,
-        status_code: 200
-      });
-    },
-    observeGetSomething(params: string) {
-      const {
-        parameters: { interval },
-        callback
-      }: NativeParameter<{ interval: number }> = JSON.parse(params);
-
-      let count = 0;
-
-      const intervalID = setInterval(() => {
-        if (globalObject[callback]) {
-          globalObject[callback]({
-            result: count,
-            error: null,
-            status_code: 200
-          });
-
-          count += 1;
-        } else {
-          clearInterval(intervalID);
-        }
-      }, interval);
-    },
-    observeGetSomethingWithTerminate(params: string) {
-      const {
-        parameters: { timeout },
-        callback
-      }: NativeParameter<{ timeout: number }> = JSON.parse(params);
-
-      setTimeout(() => {
         globalObject[callback]({
-          result: { event: StreamEvent.STREAM_TERMINATED },
+          result: formatResult(param1, param2),
+          error: null,
           status_code: 200
         });
-      }, timeout);
-    },
-    throwError(params: string) {
-      const {
-        parameters: { param },
-        callback
-      }: NativeParameter<{ param: string }> = JSON.parse(params);
+      },
+      observeGetSomething(params: string) {
+        const {
+          parameters: { interval },
+          callback
+        }: NativeParameter<{ interval: number }> = JSON.parse(params);
 
-      globalObject[callback]({
-        result: null,
-        error: { message: formatError(param) },
-        status_code: 404
-      });
-    }
-  };
-}
+        let count = 0;
 
-function createTestIOSModule(globalObject: any) {
-  return {
-    name: 'TestIOSModule',
-    postMessage: ({ method, parameters, callback }: NativeParameter) => {
-      switch (method) {
-        case 'getSomething':
+        const intervalID = setInterval(() => {
+          if (globalObject[callback]) {
+            globalObject[callback]({
+              result: count,
+              error: null,
+              status_code: 200
+            });
+
+            count += 1;
+          } else {
+            clearInterval(intervalID);
+          }
+        }, interval);
+      },
+      observeGetSomethingWithTerminate(params: string) {
+        const {
+          parameters: { timeout },
+          callback
+        }: NativeParameter<{ timeout: number }> = JSON.parse(params);
+
+        setTimeout(() => {
           globalObject[callback]({
-            result: formatResult(parameters.param1, parameters.param2),
-            error: null,
+            result: { event: StreamEvent.STREAM_TERMINATED },
             status_code: 200
           });
+        }, timeout);
+      },
+      throwError(params: string) {
+        const {
+          parameters: { param },
+          callback
+        }: NativeParameter<{ param: string }> = JSON.parse(params);
 
-          break;
+        globalObject[callback]({
+          result: null,
+          error: { message: formatError(param) },
+          status_code: 404
+        });
+      }
+    };
+  }
 
-        case 'observeGetSomething':
-          let count = 0;
+  function createTestIOSModule(globalObject: any) {
+    return {
+      name: 'TestIOSModule',
+      postMessage: ({ method, parameters, callback }: NativeParameter) => {
+        switch (method) {
+          case 'getSomething':
+            globalObject[callback]({
+              result: formatResult(parameters.param1, parameters.param2),
+              error: null,
+              status_code: 200
+            });
 
-          const intervalID = setInterval(
-            () => {
-              if (globalObject[callback]) {
+            break;
+
+          case 'observeGetSomething':
+            let count = 0;
+
+            const intervalID = setInterval(
+              () => {
+                if (globalObject[callback]) {
+                  globalObject[callback]({
+                    result: count,
+                    error: null,
+                    status_code: 200
+                  });
+
+                  count += 1;
+                } else {
+                  clearInterval(intervalID);
+                }
+              },
+              parameters.interval as number
+            );
+
+            break;
+
+          case 'observeGetSomethingWithTerminate':
+            setTimeout(
+              () => {
                 globalObject[callback]({
-                  result: count,
-                  error: null,
+                  result: { event: StreamEvent.STREAM_TERMINATED },
                   status_code: 200
                 });
+              },
+              parameters.timeout as number
+            );
 
-                count += 1;
-              } else {
-                clearInterval(intervalID);
-              }
-            },
-            parameters.interval as number
-          );
+            break;
 
-          break;
+          case 'throwError':
+            globalObject[callback]({
+              result: null,
+              error: { message: formatError(parameters.param) },
+              status_code: 404
+            });
 
-        case 'observeGetSomethingWithTerminate':
-          setTimeout(
-            () => {
-              globalObject[callback]({
-                result: { event: StreamEvent.STREAM_TERMINATED },
-                status_code: 200
-              });
-            },
-            parameters.timeout as number
-          );
-
-          break;
-
-        case 'throwError':
-          globalObject[callback]({
-            result: null,
-            error: { message: formatError(parameters.param) },
-            status_code: 404
-          });
-
-          break;
+            break;
+        }
       }
-    }
-  };
-}
+    };
+  }
 
-describe('Module wrappers should wrap platform modules correctly', () => {
   async function test_moduleMethod_withNormalReturn(
     globalObject: any,
     moduleName: string
