@@ -94,6 +94,14 @@
         const objectKeys = getObjectKeys(object);
         return !!object && keys.every(key => objectKeys.indexOf(key) >= 0);
     }
+    /**
+     * Wrap a module name to mark it as wrapped.
+     * @param moduleName The original module name.
+     * @return The wrapped module name.
+     */
+    function wrapModuleName(moduleName) {
+        return `Wrapped${moduleName}`;
+    }
 
     (function (StreamEvent) {
         StreamEvent["STREAM_TERMINATED"] = "STREAM_TERMINATED";
@@ -251,14 +259,14 @@
         if (!!globalObject[moduleName]) {
             const androidModule = globalObject[moduleName];
             const wrappedModule = wrapAndroidModule(window, moduleName, androidModule);
-            globalObject[moduleName] = wrappedModule;
+            globalObject[wrapModuleName(moduleName)] = wrappedModule;
         }
         else if (!!globalObject.webkit &&
             !!globalObject.webkit.messageHandlers &&
             !!globalObject.webkit.messageHandlers[moduleName]) {
             const iOSModule = globalObject.webkit.messageHandlers[moduleName];
             const wrappedModule = wrapIOSModule(globalObject, moduleName, iOSModule);
-            globalObject[moduleName] = wrappedModule;
+            globalObject[wrapModuleName(moduleName)] = wrappedModule;
         }
     }
 

@@ -46,3 +46,9 @@ export declare function getCallbackName({ moduleName, funcName, requestID: req }
  * @return Whether the object is of this type.
  */
 export declare function isType<T, K extends StringKeys<T> = StringKeys<T>>(object: unknown, ...keys: K[]): object is T;
+/**
+ * Wrap a module name to mark it as wrapped.
+ * @param moduleName The original module name.
+ * @return The wrapped module name.
+ */
+export declare function wrapModuleName(moduleName: string): string;
