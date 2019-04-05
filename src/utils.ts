@@ -5,9 +5,9 @@ export type StringKeys<T> = Extract<keyof T, string>;
 export type DefaultParameters = Readonly<{ isStream: unknown }>;
 
 /** Method parameters for native methods. */
-export type NativeParameter<MethodKey, Params> = Readonly<{
+export type NativeParameter<Params = { [K: string]: unknown }> = Readonly<{
   /** The method name. */
-  method: MethodKey;
+  method: string;
 
   /** The method parameters. */
   parameters: Params & DefaultParameters;

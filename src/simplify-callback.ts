@@ -1,6 +1,6 @@
 import {
-  createSubscription,
   createDataStream,
+  createSubscription,
   DataStream,
   Subscription
 } from './subscription';
@@ -14,7 +14,7 @@ type Params = Readonly<{
   isStream: unknown;
 
   /** The method being wrapped. */
-  funcToWrap: (callbackName: string) => () => unknown;
+  funcToWrap: (callbackName: string) => unknown;
 
   /** Function to create the name of the callback that will receive results. */
   callbackNameFunc: () => string;
@@ -62,7 +62,7 @@ function promisifyCallback(
       delete globalObject[callbackName];
     };
 
-    funcToWrap(callbackName)();
+    funcToWrap(callbackName);
   });
 }
 
@@ -96,7 +96,7 @@ function streamCallback(
         }
       };
 
-      funcToWrap(callbackName)();
+      funcToWrap(callbackName);
 
       subscription = createSubscription(() => {
         /**

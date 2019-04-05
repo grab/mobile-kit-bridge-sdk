@@ -1,6 +1,5 @@
 import { wrapModuleName } from './utils';
-import { wrapAndroidModule } from './wrap-android';
-import { wrapIOSModule } from './wrap-ios';
+import { wrapGenericModule } from './wrap-generic';
 
 /**
  * Wrap the appropriate module based on whether or not it's Android/iOS.
@@ -8,17 +7,19 @@ import { wrapIOSModule } from './wrap-ios';
  * @param moduleName The name of the module being wrapped.
  */
 export function wrapModule(globalObject: any, moduleName: string) {
-  if (!!globalObject[moduleName]) {
-    const androidModule = globalObject[moduleName];
-    const wrappedModule = wrapAndroidModule(window, moduleName, androidModule);
-    globalObject[wrapModuleName(moduleName)] = wrappedModule;
-  } else if (
-    !!globalObject.webkit &&
-    !!globalObject.webkit.messageHandlers &&
-    !!globalObject.webkit.messageHandlers[moduleName]
-  ) {
-    const iOSModule = globalObject.webkit.messageHandlers[moduleName];
-    const wrappedModule = wrapIOSModule(globalObject, moduleName, iOSModule);
-    globalObject[wrapModuleName(moduleName)] = wrappedModule;
-  }
+  globalObject[wrapModuleName(moduleName)] = wrapGenericModule(
+    globalObject,
+    moduleName,
+    params => {
+      if (!!globalObject[moduleName]) {
+        globalObject[moduleName][params.method](JSON.stringify(params));
+      } else if (
+        !!globalObject.webkit &&
+        !!globalObject.webkit.messageHandlers &&
+        !!globalObject.webkit.messageHandlers[moduleName]
+      ) {
+        globalObject.webkit.messageHandlers[moduleName].postMessage(params);
+      }
+    }
+  );
 }
