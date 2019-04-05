@@ -197,13 +197,17 @@
             invoke: (method, params) => {
                 return simplifyCallback(globalObject, {
                     funcNameToWrap: method,
-                    isStream: params.isStream,
+                    isStream: !!params && !!params.isStream,
                     callbackNameFunc: () => {
                         const requestID = methodRequestIDMap[method] || 0;
                         methodRequestIDMap[method] = requestID + 1;
                         return getCallbackName({ moduleName, requestID, funcName: method });
                     },
-                    funcToWrap: callback => moduleMethodFunc({ callback, method, parameters: params })
+                    funcToWrap: callback => moduleMethodFunc({
+                        callback,
+                        method,
+                        parameters: params !== undefined && params !== null ? params : {}
+                    })
                 });
             }
         };

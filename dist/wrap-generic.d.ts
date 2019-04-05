@@ -1,9 +1,9 @@
 import { DefaultParameters, NativeParameter } from './utils';
 /** Represents a wrapped generic module. */
 declare type WrappedModule = Readonly<{
-    invoke: (method: string, params: Readonly<{
+    invoke: (method: string, params: (Readonly<{
         [K: string]: unknown;
-    }> & DefaultParameters) => unknown;
+    }> & DefaultParameters) | undefined | null) => unknown;
 }>;
 /**
  * Wrap a generic module. This should work for both Android and iOS-injected

@@ -11,7 +11,7 @@ export declare type NativeParameter<Params = {
     /** The method name. */
     method: string;
     /** The method parameters. */
-    parameters: Params & DefaultParameters;
+    parameters: Params;
     /** The name of the callback. */
     callback: string;
 }>;
