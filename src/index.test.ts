@@ -193,9 +193,11 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       null
     );
 
-    // Then
+    // Then - make sure to check number of keys to include the original module
+    // and the wrapped module as well.
     expect(result1).toEqual({ result: null, error: null, status_code: 200 });
     expect(result2).toEqual({ result: null, error: null, status_code: 200 });
+    expect(Object.keys(globalObject)).toHaveLength(2);
   }
 
   async function test_invokeMethodWithFalsyParam_shouldWork(
@@ -216,9 +218,11 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       ''
     );
 
-    // Then
+    // Then - make sure to check number of keys to include the original module
+    // and the wrapped module as well.
     expect(result1).toEqual({ result: 0, error: null, status_code: 200 });
     expect(result2).toEqual({ result: '', error: null, status_code: 200 });
+    expect(Object.keys(globalObject)).toHaveLength(2);
   }
 
   async function test_moduleMethod_withNormalReturn(
@@ -236,12 +240,15 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       param2
     });
 
-    // Then
+    // Then - make sure to check number of keys to include the original module
+    // and the wrapped module as well.
     expect(result).toEqual({
       result: formatResult(param1, param2),
       error: null,
       status_code: 200
     });
+
+    expect(Object.keys(globalObject)).toHaveLength(2);
   }
 
   async function test_moduleMethod_withError(
@@ -257,12 +264,15 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       param
     });
 
-    // Then
+    // Then - make sure to check number of keys to include the original module
+    // and the wrapped module as well.
     expect(result).toEqual({
       result: null,
       error: { message: formatError(param) },
       status_code: 404
     });
+
+    expect(Object.keys(globalObject)).toHaveLength(2);
   }
 
   async function test_moduleMethod_withMultipleInvocations(
@@ -310,13 +320,15 @@ describe('Module wrappers should wrap platform modules correctly', () => {
       .invoke('observeGetSomething', { interval })
       .subscribe({ next: (value: CallbackResult) => streamedVals.push(value) });
 
-    // Then.
+    // Then - make sure to check number of keys to include the original module
+    // and the wrapped module as well.
     setTimeout(subscription.unsubscribe, streamTimeout);
 
     setTimeout(() => {
       const length = (streamTimeout - (streamTimeout % interval)) / interval;
       expect(streamedVals).toHaveLength(length);
       expect([...new Set(streamedVals)]).toHaveLength(length);
+      expect(Object.keys(globalObject)).toHaveLength(2);
       done();
     }, timeout);
   }
@@ -341,11 +353,13 @@ describe('Module wrappers should wrap platform modules correctly', () => {
         complete: () => (completed = true)
       });
 
-    // Then
+    // Then - make sure to check number of keys to include the original module
+    // and the wrapped module as well.
     setTimeout(() => {
       expect(streamedValues).toHaveLength(0);
       expect(completed).toBeTruthy();
       expect(subscription.isUnsubscribed()).toBeTruthy();
+      expect(Object.keys(globalObject)).toHaveLength(2);
       done();
     }, timeout);
   }
