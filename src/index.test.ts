@@ -271,7 +271,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
   ) {
     // Setup
     const wrappedName = wrapModuleName(moduleName);
-    const rounds = 100;
+    const rounds = 1;
 
     const expected = [...Array(rounds).keys()].map(v => ({
       result: formatResult(v, v + 1),
@@ -307,7 +307,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscription = globalObject[wrappedName]
-      .invoke('observeGetSomething', { interval, isStream: true })
+      .invoke('observeGetSomething', { interval })
       .subscribe({ next: (value: CallbackResult) => streamedVals.push(value) });
 
     // Then.
@@ -335,10 +335,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscription = globalObject[wrappedName]
-      .invoke('observeGetSomethingWithTerminate', {
-        isStream: true,
-        timeout: streamTimeout
-      })
+      .invoke('observeGetSomethingWithTerminate', { timeout: streamTimeout })
       .subscribe({
         next: (value: CallbackResult) => streamedValues.push(value),
         complete: () => (completed = true)
@@ -362,7 +359,6 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const iterations = 1000;
 
     const stream = globalObject[wrappedName].invoke('observeGetSomething', {
-      isStream: true,
       param: 1
     });
 

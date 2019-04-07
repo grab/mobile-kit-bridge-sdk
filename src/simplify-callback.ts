@@ -10,9 +10,6 @@ type Params = Readonly<{
   /** The name of the function to be wrapped. */
   funcNameToWrap: string;
 
-  /** Check whether a stream should be returned instead of a Promise */
-  isStream: unknown;
-
   /** The method being wrapped. */
   funcToWrap: (callbackName: string) => unknown;
 
@@ -37,36 +34,6 @@ export type StreamEventResult = Readonly<{
 }>;
 
 /**
- * For web bridges, native code will run a JS script that accesses a global
- * callback related to the module's method being wrapped and pass in results so
- * that partner app can access them. This function promisifies this callback to
- * support async-await/Promise.
- * @param globalObject The global object - generally window.
- * @param params Parameters for promisify.
- * @return Promise that resolves to the callback result.
- */
-function promisifyCallback(
-  globalObject: any,
-  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap' | 'isStream'>
-): PromiseLike<any> {
-  const callbackName = callbackNameFunc();
-
-  return new Promise(resolve => {
-    globalObject[callbackName] = (data: CallbackResult) => {
-      resolve(data);
-
-      /**
-       * Since this is an one-off result, immediately remove the callback from
-       * global object to avoid polluting it.
-       */
-      delete globalObject[callbackName];
-    };
-
-    funcToWrap(callbackName);
-  });
-}
-
-/**
  * Convert the callback to a stream to receive continual values.
  * @param globalObject The global object - generally window.
  * @param param1 Parameters for stream creation.
@@ -74,7 +41,7 @@ function promisifyCallback(
  */
 function streamCallback(
   globalObject: any,
-  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap' | 'isStream'>
+  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
 ): DataStream {
   return createDataStream(
     (handlers): Subscription => {
@@ -123,11 +90,7 @@ function streamCallback(
  */
 export function simplifyCallback(
   globalObject: any,
-  { funcNameToWrap, isStream, ...restParams }: Params
+  { funcNameToWrap, ...restParams }: Params
 ) {
-  if (!!isStream) {
-    return streamCallback(globalObject, restParams);
-  }
-
-  return promisifyCallback(globalObject, restParams);
+  return streamCallback(globalObject, restParams);
 }

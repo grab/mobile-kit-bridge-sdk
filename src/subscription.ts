@@ -45,7 +45,9 @@ export function createSubscription(unsubscribe: () => unknown): Subscription {
 }
 
 /**
- * Create a data stream with default functionalities.
+ * Create a data stream with default functionalities. When we implement
+ * Promise functionalities, beware that if then block is executed immediately
+ * (i.e. a resolved promise), the subscription object may not be created yet.
  * @param subscribe Injected subscribe function.
  * @return A DataStream instance.
  */
@@ -56,12 +58,18 @@ export function createDataStream(
     subscribe,
     then: onFulfilled => {
       return new Promise(() => {
-        const subscription = subscribe({
+        let subscription: Subscription | null = null;
+        let didFinish = false;
+
+        subscription = subscribe({
           next: data => {
             !!onFulfilled && onFulfilled(data);
-            subscription.unsubscribe();
+            !!subscription && subscription.unsubscribe();
+            didFinish = true;
           }
         });
+
+        if (didFinish) !!subscription && subscription.unsubscribe();
       });
     }
   };

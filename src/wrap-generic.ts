@@ -31,7 +31,6 @@ export function wrapGenericModule(
     invoke: (method, params) => {
       return simplifyCallback(globalObject, {
         funcNameToWrap: method,
-        isStream: !!params && !!params.isStream,
         callbackNameFunc: () => {
           const requestID = methodRequestIDMap[method] || 0;
           methodRequestIDMap[method] = requestID + 1;
