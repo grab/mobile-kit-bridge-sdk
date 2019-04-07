@@ -27,7 +27,9 @@ export declare type DataStream = Readonly<{
  */
 export declare function createSubscription(unsubscribe: () => unknown): Subscription;
 /**
- * Create a data stream with default functionalities.
+ * Create a data stream with default functionalities. When we implement
+ * Promise functionalities, beware that if then block is executed immediately
+ * (i.e. a resolved promise), the subscription object may not be created yet.
  * @param subscribe Injected subscribe function.
  * @return A DataStream instance.
  */

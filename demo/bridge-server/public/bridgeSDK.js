@@ -46,7 +46,9 @@
         };
     }
     /**
-     * Create a data stream with default functionalities.
+     * Create a data stream with default functionalities. When we implement
+     * Promise functionalities, beware that if then block is executed immediately
+     * (i.e. a resolved promise), the subscription object may not be created yet.
      * @param subscribe Injected subscribe function.
      * @return A DataStream instance.
      */
@@ -55,12 +57,17 @@
             subscribe,
             then: onFulfilled => {
                 return new Promise(() => {
-                    const subscription = subscribe({
+                    let subscription = null;
+                    let didFinish = false;
+                    subscription = subscribe({
                         next: data => {
                             !!onFulfilled && onFulfilled(data);
-                            subscription.unsubscribe();
+                            !!subscription && subscription.unsubscribe();
+                            didFinish = true;
                         }
                     });
+                    if (didFinish)
+                        !!subscription && subscription.unsubscribe();
                 });
             }
         };
@@ -91,8 +98,10 @@
      * @return Whether the object is of this type.
      */
     function isType(object, ...keys) {
+        if (!object)
+            return false;
         const objectKeys = getObjectKeys(object);
-        return !!object && keys.every(key => objectKeys.indexOf(key) >= 0);
+        return keys.every(key => objectKeys.indexOf(key) >= 0);
     }
     /**
      * Wrap a module name to mark it as wrapped.
@@ -106,29 +115,6 @@
     (function (StreamEvent) {
         StreamEvent["STREAM_TERMINATED"] = "STREAM_TERMINATED";
     })(exports.StreamEvent || (exports.StreamEvent = {}));
-    /**
-     * For web bridges, native code will run a JS script that accesses a global
-     * callback related to the module's method being wrapped and pass in results so
-     * that partner app can access them. This function promisifies this callback to
-     * support async-await/Promise.
-     * @param globalObject The global object - generally window.
-     * @param params Parameters for promisify.
-     * @return Promise that resolves to the callback result.
-     */
-    function promisifyCallback(globalObject, { callbackNameFunc, funcToWrap }) {
-        const callbackName = callbackNameFunc();
-        return new Promise(resolve => {
-            globalObject[callbackName] = (data) => {
-                resolve(data);
-                /**
-                 * Since this is an one-off result, immediately remove the callback from
-                 * global object to avoid polluting it.
-                 */
-                delete globalObject[callbackName];
-            };
-            funcToWrap(callbackName);
-        });
-    }
     /**
      * Convert the callback to a stream to receive continual values.
      * @param globalObject The global object - generally window.
@@ -176,11 +162,8 @@
      * @return Check the return types for private functions in this module.
      */
     function simplifyCallback(globalObject, _a) {
-        var { funcNameToWrap, isStream } = _a, restParams = __rest(_a, ["funcNameToWrap", "isStream"]);
-        if (!!isStream) {
-            return streamCallback(globalObject, restParams);
-        }
-        return promisifyCallback(globalObject, restParams);
+        var restParams = __rest(_a, ["funcNameToWrap"]);
+        return streamCallback(globalObject, restParams);
     }
 
     /**
@@ -197,7 +180,6 @@
             invoke: (method, params) => {
                 return simplifyCallback(globalObject, {
                     funcNameToWrap: method,
-                    isStream: !!params && !!params.isStream,
                     callbackNameFunc: () => {
                         const requestID = methodRequestIDMap[method] || 0;
                         methodRequestIDMap[method] = requestID + 1;
