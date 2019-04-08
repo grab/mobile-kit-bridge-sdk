@@ -49,25 +49,34 @@
      * Create a data stream with default functionalities. When we implement
      * Promise functionalities, beware that if then block is executed immediately
      * (i.e. a resolved promise), the subscription object may not be created yet.
+     *
+     * The call to subscribe may throw an error which we need to catch, due to the
+     * asynchronous nature of Promises. This error will then be passed to the
+     * reject call.
      * @param subscribe Injected subscribe function.
      * @return A DataStream instance.
      */
     function createDataStream(subscribe) {
         return {
             subscribe,
-            then: onFulfilled => {
+            then: (onFulfilled, onRejected) => {
                 return new Promise(() => {
-                    let subscription = null;
-                    let didFinish = false;
-                    subscription = subscribe({
-                        next: data => {
-                            !!onFulfilled && onFulfilled(data);
+                    try {
+                        let subscription = null;
+                        let didFinish = false;
+                        subscription = subscribe({
+                            next: data => {
+                                !!onFulfilled && onFulfilled(data);
+                                !!subscription && subscription.unsubscribe();
+                                didFinish = true;
+                            }
+                        });
+                        if (didFinish)
                             !!subscription && subscription.unsubscribe();
-                            didFinish = true;
-                        }
-                    });
-                    if (didFinish)
-                        !!subscription && subscription.unsubscribe();
+                    }
+                    catch (e) {
+                        !!onRejected && onRejected(e);
+                    }
                 });
             }
         };
@@ -136,10 +145,15 @@
                         }
                     }
                     else {
-                        handlers && handlers.next && handlers.next(data);
+                        !!handlers && !!handlers.next && handlers.next(data);
                     }
                 }
             };
+            /**
+             * Beware that this function may throw a non-recoverable error, such
+             * as module not available. In that case, we should let this call fail
+             * and ensure the error is caught downstream.
+             */
             funcToWrap(callbackName);
             subscription = createSubscription(() => {
                 /**
@@ -149,7 +163,7 @@
                  * therefore the stream may be terminated on the mobile side.
                  */
                 delete globalObject[callbackName];
-                handlers && handlers.complete && handlers.complete();
+                !!handlers && !!handlers.complete && handlers.complete();
             });
             return subscription;
         });
@@ -209,6 +223,9 @@
                 !!globalObject.webkit.messageHandlers &&
                 !!globalObject.webkit.messageHandlers[moduleName]) {
                 globalObject.webkit.messageHandlers[moduleName].postMessage(params);
+            }
+            else {
+                throw new Error(`Unexpected method '${params.method}' for module '${moduleName}'`);
             }
         });
     }

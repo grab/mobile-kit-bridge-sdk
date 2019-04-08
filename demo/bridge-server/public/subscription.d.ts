@@ -30,6 +30,10 @@ export declare function createSubscription(unsubscribe: () => unknown): Subscrip
  * Create a data stream with default functionalities. When we implement
  * Promise functionalities, beware that if then block is executed immediately
  * (i.e. a resolved promise), the subscription object may not be created yet.
+ *
+ * The call to subscribe may throw an error which we need to catch, due to the
+ * asynchronous nature of Promises. This error will then be passed to the
+ * reject call.
  * @param subscribe Injected subscribe function.
  * @return A DataStream instance.
  */
