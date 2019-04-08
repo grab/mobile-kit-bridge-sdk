@@ -521,6 +521,43 @@ describe('Module wrappers should wrap platform modules correctly', () => {
   });
 });
 
+describe('Edge cases for wrapper', () => {
+  it('Should throw error for Promise if no module found', async () => {
+    // Setup
+    const globalObject: any = {};
+    const moduleName = 'NonExistentModule';
+    const wrappedName = wrapModuleName(moduleName);
+    wrapModule(globalObject, moduleName);
+
+    // When && Then
+    try {
+      await globalObject[wrappedName].invoke('nonExistentMethod');
+      fail('Never should have come here');
+    } catch (e) {
+      expect(e).toBeTruthy();
+    }
+  });
+
+  it('Should throw error for stream if no module found', async () => {
+    // Setup
+    const globalObject: any = {};
+    const moduleName = 'NonExistentModule';
+    const wrappedName = wrapModuleName(moduleName);
+    wrapModule(globalObject, moduleName);
+
+    // When && Then
+    try {
+      globalObject[wrappedName]
+        .invoke('nonExistentMethod')
+        .subscribe({ next: console.log, complete: console.log });
+
+      fail('Never should have come here');
+    } catch (e) {
+      expect(e).toBeTruthy();
+    }
+  });
+});
+
 describe('Utility functions should work correctly', () => {
   it('Data stream should support Promise-style chaining', async done => {
     // Setup

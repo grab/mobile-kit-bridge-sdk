@@ -48,6 +48,10 @@ export function createSubscription(unsubscribe: () => unknown): Subscription {
  * Create a data stream with default functionalities. When we implement
  * Promise functionalities, beware that if then block is executed immediately
  * (i.e. a resolved promise), the subscription object may not be created yet.
+ *
+ * The call to subscribe may throw an error which we need to catch, due to the
+ * asynchronous nature of Promises. This error will then be passed to the
+ * reject call.
  * @param subscribe Injected subscribe function.
  * @return A DataStream instance.
  */
@@ -56,20 +60,24 @@ export function createDataStream(
 ): DataStream {
   return {
     subscribe,
-    then: onFulfilled => {
+    then: (onFulfilled, onRejected) => {
       return new Promise(() => {
-        let subscription: Subscription | null = null;
-        let didFinish = false;
+        try {
+          let subscription: Subscription | null = null;
+          let didFinish = false;
 
-        subscription = subscribe({
-          next: data => {
-            !!onFulfilled && onFulfilled(data);
-            !!subscription && subscription.unsubscribe();
-            didFinish = true;
-          }
-        });
+          subscription = subscribe({
+            next: data => {
+              !!onFulfilled && onFulfilled(data);
+              !!subscription && subscription.unsubscribe();
+              didFinish = true;
+            }
+          });
 
-        if (didFinish) !!subscription && subscription.unsubscribe();
+          if (didFinish) !!subscription && subscription.unsubscribe();
+        } catch (e) {
+          !!onRejected && onRejected(e);
+        }
       });
     }
   };

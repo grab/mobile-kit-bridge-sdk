@@ -58,11 +58,16 @@ function streamCallback(
                 break;
             }
           } else {
-            handlers && handlers.next && handlers.next(data);
+            !!handlers && !!handlers.next && handlers.next(data);
           }
         }
       };
 
+      /**
+       * Beware that this function may throw a non-recoverable error, such
+       * as module not available. In that case, we should let this call fail
+       * and ensure the error is caught downstream.
+       */
       funcToWrap(callbackName);
 
       subscription = createSubscription(() => {
@@ -73,7 +78,7 @@ function streamCallback(
          * therefore the stream may be terminated on the mobile side.
          */
         delete globalObject[callbackName];
-        handlers && handlers.complete && handlers.complete();
+        !!handlers && !!handlers.complete && handlers.complete();
       });
 
       return subscription;

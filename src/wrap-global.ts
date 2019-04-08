@@ -19,6 +19,10 @@ export function wrapModule(globalObject: any, moduleName: string) {
         !!globalObject.webkit.messageHandlers[moduleName]
       ) {
         globalObject.webkit.messageHandlers[moduleName].postMessage(params);
+      } else {
+        throw new Error(
+          `Unexpected method '${params.method}' for module '${moduleName}'`
+        );
       }
     }
   );
