@@ -88,3 +88,7 @@ dist/*test*
 .rpt2*
 .npmrc
 .vscode
+.prettierignore
+.prettierrc
+*tslint.json
+*yarn.lock
