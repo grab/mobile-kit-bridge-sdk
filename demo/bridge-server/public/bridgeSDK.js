@@ -30,6 +30,12 @@
     }
 
     /**
+     * Copyright (c) Grab Taxi Holdings PTE LTD (GRAB)
+     *
+     * This source code is licensed under the MIT license found in the
+     * LICENSE file in the root directory of this source tree.
+     */
+    /**
      * Create a subscription that can only be unsubscribed from once.
      * @param unsubscribe Unsubscription logic.
      */
@@ -83,6 +89,12 @@
     }
 
     /**
+     * Copyright (c) Grab Taxi Holdings PTE LTD (GRAB)
+     *
+     * This source code is licensed under the MIT license found in the
+     * LICENSE file in the root directory of this source tree.
+     */
+    /**
      * Get the keys of an object.
      * @param object Some object.
      * @return Array of object keys.
@@ -121,6 +133,12 @@
         return `Wrapped${moduleName}`;
     }
 
+    /**
+     * Copyright (c) Grab Taxi Holdings PTE LTD (GRAB)
+     *
+     * This source code is licensed under the MIT license found in the
+     * LICENSE file in the root directory of this source tree.
+     */
     (function (StreamEvent) {
         StreamEvent["STREAM_TERMINATED"] = "STREAM_TERMINATED";
     })(exports.StreamEvent || (exports.StreamEvent = {}));
@@ -181,6 +199,12 @@
     }
 
     /**
+     * Copyright (c) Grab Taxi Holdings PTE LTD (GRAB)
+     *
+     * This source code is licensed under the MIT license found in the
+     * LICENSE file in the root directory of this source tree.
+     */
+    /**
      * Wrap a generic module. This should work for both Android and iOS-injected
      * Javascript interfaces.
      * @param globalObject The global object - generally window.
@@ -210,6 +234,12 @@
     }
 
     /**
+     * Copyright (c) Grab Taxi Holdings PTE LTD (GRAB)
+     *
+     * This source code is licensed under the MIT license found in the
+     * LICENSE file in the root directory of this source tree.
+     */
+    /**
      * Wrap the appropriate module based on whether or not it's Android/iOS.
      * @param globalObject The global object - generally window.
      * @param moduleName The name of the module being wrapped.
@@ -229,6 +259,13 @@
             }
         });
     }
+
+    /**
+     * Copyright (c) Grab Taxi Holdings PTE LTD (GRAB)
+     *
+     * This source code is licensed under the MIT license found in the
+     * LICENSE file in the root directory of this source tree.
+     */
 
     exports.wrapModule = wrapModule;
 

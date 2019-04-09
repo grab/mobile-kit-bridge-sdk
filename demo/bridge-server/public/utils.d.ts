@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) Grab Taxi Holdings PTE LTD (GRAB)
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 export declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export declare type StringKeys<T> = Extract<keyof T, string>;
 /** Default parameters that must be present in all calls. */

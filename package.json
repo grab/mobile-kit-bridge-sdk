@@ -1,13 +1,13 @@
 {
-  "name": "@viethai.pham/mobile-kit-bridge-sdk",
+  "name": "@partner-engineering/mobile-kit-bridge-sdk",
   "version": "1.0.0",
   "description": "SDK for mobile kit bridge to offer unified method signatures for Android/iOS.",
   "main": "dist/index.min.js",
   "types": "dist/index.d.ts",
   "typings": "dist/index.d.ts",
   "repository": "https://gitlab.myteksi.net/viethai.pham/mobile-kit-bridge-sdk.git",
-  "author": "Viet Hai Pham",
-  "license": "UNLICENSED",
+  "author": "Viet Hai Pham (viethai.pham)",
+  "license": "MIT",
   "devDependencies": {
     "@lernetz/gulp-typescript-bundle": "^0.3.1",
     "@types/bluebird": "^3.5.26",
@@ -29,8 +29,5 @@
     "gulp": "gulp",
     "test": "jest --coverage",
     "prepublishOnly": "gulp ts:distribution"
-  },
-  "publishConfig": {
-    "@viethai.pham:registry": "https://gitlab.myteksi.net/api/v4/projects/2044/packages/npm/"
   }
 }
