@@ -7,19 +7,27 @@
   "typings": "dist/index.d.ts",
   "repository": "https://gitlab.myteksi.net/viethai.pham/mobile-kit-bridge-sdk.git",
   "author": "Viet Hai Pham (viethai.pham)",
-  "maintainers": ["Viet Hai Pham (viethai.pham)"],
+  "maintainers": [
+    "Viet Hai Pham (viethai.pham)"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@types/bluebird": "^3.5.26",
+    "@types/expect.js": "^0.3.29",
+    "@types/mocha": "^5.2.6",
     "bluebird": "^3.5.3",
+    "expect.js": "^0.3.1",
+    "mocha": "^6.1.2",
+    "mocha-typescript": "^1.1.17",
     "prettier-tslint": "^0.4.2",
     "rollup": "^1.7.0",
     "ts-lint": "^4.5.1",
+    "ts-node": "^8.0.3",
     "tslint-config-airbnb": "^5.11.1",
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.3.3333"
   },
   "scripts": {
-    "test": "jest --coverage"
+    "test": "mocha -r ts-node/register **/*.test.ts"
   }
 }

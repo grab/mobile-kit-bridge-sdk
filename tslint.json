@@ -3,6 +3,7 @@
   "rules": {
     "arrow-parens": false,
     "quotemark": [true, "single"],
-    "trailing-comma": [true, "all"]
+    "space-before-function-paren": false,
+    "trailing-comma": [true, "all"],
   }
 }
