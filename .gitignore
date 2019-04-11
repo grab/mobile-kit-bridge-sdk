@@ -90,5 +90,4 @@ dist/*test*
 .vscode
 .prettierignore
 .prettierrc
-*tslint.json
 *yarn.lock
