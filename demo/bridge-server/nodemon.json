@@ -1,5 +1,0 @@
-{
-  "watch": ["public/**", "index.js"],
-  "ignore": ["**/*.test.js"],
-  "exec": "node index.js"
-}

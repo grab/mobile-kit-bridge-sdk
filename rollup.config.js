@@ -35,7 +35,4 @@ function createConfig({ file = 'dist/index.js' }) {
   };
 }
 
-export default [
-  createConfig({}),
-  createConfig({ file: 'demo/bridge-server/public/index.js' })
-];
+export default [createConfig({})];

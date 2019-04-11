@@ -1,6 +1,0 @@
-<resources>
-  <string name="app_name">BridgeDemoADR</string>
-  <string name="action_settings">Settings</string>
-  <string name="default_url">Default URL</string>
-  <string name="reload">Reload</string>
-</resources>
