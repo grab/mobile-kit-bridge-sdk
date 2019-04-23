@@ -81,9 +81,6 @@ typings/
 
 # Custom
 dist/**/*
-!dist/index.min.js
-!dist/*.d.ts
-dist/*test*
 .DS_STORE
 .rpt2*
 .npmrc

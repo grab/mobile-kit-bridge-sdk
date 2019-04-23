@@ -1,14 +1,19 @@
 {
-  "name": "@partner-engineering/mobile-kit-bridge-sdk",
+  "name": "@grabjs/mobile-kit-bridge-sdk",
   "version": "1.0.0",
   "description": "SDK for mobile kit bridge to offer unified method signatures for Android/iOS.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typings": "dist/index.d.ts",
-  "repository": "https://gitlab.myteksi.net/viethai.pham/mobile-kit-bridge-sdk.git",
-  "author": "Viet Hai Pham (viethai.pham)",
+  "repository": "https://github.com/grab/mobile-kit-bridge-sdk",
+  "author": "Viet Hai Pham <viethai.pham@grabtaxi.com>",
   "maintainers": [
-    "Viet Hai Pham (viethai.pham)"
+    "Viet Hai Pham <viethai.pham@grabtaxi.com>",
+    "Naman Aggarwal <naman.aggarwal@grabtaxi.com>",
+    "Arun Sundaramurthy <arun.sundaramurthy@grabtaxi.com>"
+  ],
+  "files": [
+    "dist"
   ],
   "license": "MIT",
   "devDependencies": {
@@ -37,6 +42,7 @@
     "test": "mocha -r ts-node/register **/*.test.ts",
     "build": "rm -rf dist && rollup -c",
     "watch": "rollup -cw",
-    "prepublishOnly": "yarn build"
-  }
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["webview", "android", "ios"]
 }
