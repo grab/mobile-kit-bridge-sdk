@@ -44,5 +44,9 @@
     "watch": "rollup -cw",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["webview", "android", "ios"]
+  "keywords": [
+    "webview",
+    "android",
+    "ios"
+  ]
 }
