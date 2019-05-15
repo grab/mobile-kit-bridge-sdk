@@ -1,3 +1,7 @@
+# Disclaimer
+
+This SDK is a generic SDK for native webviews. For Grab `SuperApp` integration, please use the [SuperApp SDK](https://github.com/grab/superapp-sdk).
+
 # mobile-kit-bridge-sdk
 
 SDK for mobile module bridge to offer unified method signatures for Android/iOS.
