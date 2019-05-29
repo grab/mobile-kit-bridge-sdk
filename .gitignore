@@ -88,3 +88,4 @@ dist/**/*
 .prettierignore
 .prettierrc
 *yarn.lock
+*package-lock*

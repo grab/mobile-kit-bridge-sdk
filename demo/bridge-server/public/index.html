@@ -1,0 +1,183 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JS bridge SDK</title>
+    <link rel="stylesheet" href="index.css">
+    <script type="text/javascript" src="index.js"></script>
+
+    <script> 
+      window.bridgeSDK.wrapModule(window, 'MediaModule');
+      window.bridgeSDK.wrapModule(window, 'StorageModule');
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <div id="module-list"></div>
+      <div id="invoke-result">Waiting for some result</div>
+      <div id="invoke-count">Invocation count: 0</div>
+
+      <div class="storage-container">
+        <div class="instruction">Set value</div>
+        <input class="set-key key" placeholder="Key" value="DefKey"/>
+        <input class="set-value value" onkeyup="setValue()" placeholder="Value"/>
+      </div>
+
+      <div class="storage-container">
+        <div class="instruction actionable" onclick="observeValueOrUnsubscribe()">
+          Click to observe
+        </div>
+
+        <input class="observe-key key" placeholder="Key to observe" value="DefKey"/>
+        <div class="observe-value value"></div>
+      </div>
+
+      <div class="media-container">
+        <div class="instruction actionable" onclick="playVideoStream()">
+          Play video
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-line"></div>
+          <div class="progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="debug-container">
+        <div class="instruction actionable" onclick="sleepForSomeTime()">
+          Sleep a bit
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const mediaModule = window.WrappedMediaModule;
+      const storageModule = window.WrappedStorageModule;
+      const resultDiv = document.getElementById("invoke-result");
+      let invocationCount = 0;
+
+      function incrementInvocationCount() {
+        invocationCount += 1;
+        const newMessage = `Invocation count: ${invocationCount}`;
+        document.getElementById('invoke-count').innerHTML = newMessage;
+      }
+
+      function setResultMessage(message) {
+        resultDiv.innerHTML = `${message}`;
+      }
+
+      function setResultError(error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+      }
+
+      async function setValue() {
+        const key = document.getElementsByClassName("set-key")[0].value;
+        const value = document.getElementsByClassName("set-value")[0].value;
+
+        try {
+          await storageModule.invoke('setValue', { key, value });
+          setResultMessage("Successfully called setValue!")
+        } catch (e) {
+          setResultError(e);
+        } finally {
+          incrementInvocationCount();
+        }
+      }
+
+      const observeValueOrUnsubscribe = (function () {
+        let subscription = null;
+        const instructionDiv = document.getElementsByClassName("instruction")[1];
+        const key = document.getElementsByClassName("observe-key")[0].value;
+
+        return async function() {
+          try {
+            if (!!subscription) {
+              subscription.unsubscribe();
+              return;
+            }
+
+            subscription = storageModule.invoke('observeValue', { key, isStream: true })
+              .subscribe({
+                next: ({ result }) => {
+                  const elem = document.getElementsByClassName("observe-value")[0];
+                  elem.innerHTML = result;
+                },
+                complete: () => {
+                  subscription = null;
+                  setResultMessage(`Successfully unsubscribed for key ${key}!`);
+                  instructionDiv.innerHTML = "Click to observe";
+                }
+              });
+
+            instructionDiv.innerHTML = "Click to unsub"
+            setResultMessage(`Successfully subscribed for key ${key}!`);
+          } catch (e) {
+            setResultError(e);
+          } finally {
+            incrementInvocationCount();
+          }
+        }
+      })();
+
+      const playVideoStream = (function() {
+        const progressBar = document.getElementsByClassName("progress-bar")[0];
+        let subscription = null;
+
+        return function() {
+          !!subscription && subscription.unsubscribe();
+
+          try {
+            subscription = mediaModule.invoke('playVideo', { isStream: true }).subscribe({
+              next: data => {
+                if (data.result) {
+                  const elapsed = data.result.elapsed;
+                  const total = data.result.total;
+
+                  if (typeof elapsed === 'number' && typeof total === 'number') {
+                    setResultMessage(`Playback: elapsed ${elapsed} / ${total}`);
+                    const progress = elapsed / total;
+                    progressBar.style.left = `calc(${progress * 100}% - 8px)`;
+                  } else if (!!data.result.type) {
+                    setResultMessage(`Playback: event ${data.result.type}`);
+                  }
+                }
+              },
+              complete: console.log,
+            })
+
+            setResultMessage(`Successfully started video playback!`);
+          } catch (e) {
+            setResultError(e);
+          } finally {
+            incrementInvocationCount();
+          }
+        }
+      })();
+
+      function sleepForSomeTime() {
+        const timeToSleep = 5 * 1000;
+        var currentTime = new Date().getTime();
+        while (currentTime + timeToSleep >= new Date().getTime()) {}
+      }
+    
+      (function setLoadedModules() {
+        document.getElementById("module-list").innerHTML = `Modules: [${[
+          !!window.MediaModule && 'AndroidMediaModule',
+          !!window.StorageModule && 'AndroidStorageModule',
+          ...(function() {
+            if (window.webkit && window.webkit.messageHandlers) {
+              return [
+                !!window.webkit.messageHandlers.MediaModule && 'IOSMediaModule',
+                !!window.webkit.messageHandlers.StorageModule && 'IOSStorageModule'
+              ];
+            } else {
+              return [];
+            }
+          })(),
+          !!mediaModule && 'WrappedMediaModule',
+          !!storageModule && 'WrappedStorageModule',
+        ].filter(md => !!md)}]`;
+      })();
+    </script>
+  </body>
+</html>

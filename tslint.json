@@ -4,6 +4,6 @@
     "arrow-parens": false,
     "quotemark": [true, "single"],
     "space-before-function-paren": false,
-    "trailing-comma": [true, "all"],
+    "trailing-comma": [true, "all"]
   }
 }
