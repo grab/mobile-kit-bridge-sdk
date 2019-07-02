@@ -15,10 +15,13 @@ class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.main_activity)
+    val gson = Gson()
     val storeModule = StorageModule()
-    val storageBridge = StorageModuleBridge(this.web_view, storeModule, Gson())
+    val storageBridge = StorageModuleBridge(this.web_view, storeModule, gson)
+    val locationModule = LocationModule()
+    val locationBridge = LocationModuleBridge(this.web_view, locationModule, gson)
     val mediaModule = MediaModule()
-    val mediaBridge = MediaModuleBridge(this.web_view, mediaModule, Gson())
+    val mediaBridge = MediaModuleBridge(this.web_view, mediaModule, gson)
     var currentPath = 0
     val buildURL: () -> String = {"http://10.0.2.2:8000/$currentPath"}
 
@@ -33,6 +36,7 @@ class MainActivity : AppCompatActivity() {
       this.webViewClient = webClient;
       this.settings.apply { this.javaScriptEnabled = true }
       this.addJavascriptInterface(storageBridge, "StorageModule")
+      this.addJavascriptInterface(locationBridge, "LocationModule")
       this.addJavascriptInterface(mediaBridge, "MediaModule")
       this.loadUrl(buildURL())
     }

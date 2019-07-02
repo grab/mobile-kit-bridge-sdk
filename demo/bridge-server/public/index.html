@@ -1,14 +1,15 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>JS bridge SDK</title>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="index.css" />
     <script type="text/javascript" src="index.js"></script>
 
-    <script> 
-      window.bridgeSDK.wrapModule(window, 'MediaModule');
-      window.bridgeSDK.wrapModule(window, 'StorageModule');
+    <script>
+      window.bridgeSDK.wrapModule(window, "LocationModule");
+      window.bridgeSDK.wrapModule(window, "MediaModule");
+      window.bridgeSDK.wrapModule(window, "StorageModule");
     </script>
   </head>
   <body>
@@ -19,17 +20,33 @@
 
       <div class="storage-container">
         <div class="instruction">Set value</div>
-        <input class="set-key key" placeholder="Key" value="DefKey"/>
-        <input class="set-value value" onkeyup="setValue()" placeholder="Value"/>
+        <input class="set-key key" placeholder="Key" value="DefKey" />
+        <input
+          class="set-value value"
+          onkeyup="setValue()"
+          placeholder="Value"
+        />
       </div>
 
       <div class="storage-container">
-        <div class="instruction actionable" onclick="observeValueOrUnsubscribe()">
+        <div
+          class="instruction actionable"
+          onclick="observeValueOrUnsubscribe()"
+        >
           Click to observe
         </div>
 
-        <input class="observe-key key" placeholder="Key to observe" value="DefKey"/>
+        <input
+          class="observe-key key"
+          placeholder="Key to observe"
+          value="DefKey"
+        />
         <div class="observe-value value"></div>
+      </div>
+
+      <div class="location-container">
+        <div class="instruction">Coordinates</div>
+        <div class="current-coordinate"></div>
       </div>
 
       <div class="media-container">
@@ -51,6 +68,7 @@
     </div>
 
     <script>
+      const locationModule = window.WrappedLocationModule;
       const mediaModule = window.WrappedMediaModule;
       const storageModule = window.WrappedStorageModule;
       const resultDiv = document.getElementById("invoke-result");
@@ -59,7 +77,7 @@
       function incrementInvocationCount() {
         invocationCount += 1;
         const newMessage = `Invocation count: ${invocationCount}`;
-        document.getElementById('invoke-count').innerHTML = newMessage;
+        document.getElementById("invoke-count").innerHTML = newMessage;
       }
 
       function setResultMessage(message) {
@@ -75,8 +93,8 @@
         const value = document.getElementsByClassName("set-value")[0].value;
 
         try {
-          await storageModule.invoke('setValue', { key, value });
-          setResultMessage("Successfully called setValue!")
+          await storageModule.invoke("setValue", { key, value });
+          setResultMessage("Successfully called setValue!");
         } catch (e) {
           setResultError(e);
         } finally {
@@ -84,9 +102,11 @@
         }
       }
 
-      const observeValueOrUnsubscribe = (function () {
+      const observeValueOrUnsubscribe = (function() {
         let subscription = null;
-        const instructionDiv = document.getElementsByClassName("instruction")[1];
+        const instructionDiv = document.getElementsByClassName(
+          "instruction"
+        )[1];
         const key = document.getElementsByClassName("observe-key")[0].value;
 
         return async function() {
@@ -96,10 +116,13 @@
               return;
             }
 
-            subscription = storageModule.invoke('observeValue', { key, isStream: true })
+            subscription = storageModule
+              .invoke("observeValue", { key, isStream: true })
               .subscribe({
                 next: ({ result }) => {
-                  const elem = document.getElementsByClassName("observe-value")[0];
+                  const elem = document.getElementsByClassName(
+                    "observe-value"
+                  )[0];
                   elem.innerHTML = result;
                 },
                 complete: () => {
@@ -109,14 +132,37 @@
                 }
               });
 
-            instructionDiv.innerHTML = "Click to unsub"
+            instructionDiv.innerHTML = "Click to unsub";
             setResultMessage(`Successfully subscribed for key ${key}!`);
           } catch (e) {
             setResultError(e);
           } finally {
             incrementInvocationCount();
           }
-        }
+        };
+      })();
+
+      const observeLocationChange = (function() {
+        const currentCoordinate = document.getElementsByClassName(
+          "current-coordinate"
+        )[0];
+
+        return function() {
+          try {
+            locationModule.invoke("observeLocationChange").subscribe({
+              next: data => {
+                if (!!data.result) {
+                  const { latitude, longitude } = data.result;
+                  currentCoordinate.innerHTML = `Lat: ${latitude}<br/>Lng: ${longitude}`;
+                }
+              }
+            });
+          } catch (e) {
+            setResultError(e);
+          } finally {
+            incrementInvocationCount();
+          }
+        };
       })();
 
       const playVideoStream = (function() {
@@ -127,23 +173,31 @@
           !!subscription && subscription.unsubscribe();
 
           try {
-            subscription = mediaModule.invoke('playVideo', { isStream: true }).subscribe({
-              next: data => {
-                if (data.result) {
-                  const elapsed = data.result.elapsed;
-                  const total = data.result.total;
+            subscription = mediaModule
+              .invoke("playVideo", { isStream: true })
+              .subscribe({
+                next: data => {
+                  if (!!data.result) {
+                    const elapsed = data.result.elapsed;
+                    const total = data.result.total;
 
-                  if (typeof elapsed === 'number' && typeof total === 'number') {
-                    setResultMessage(`Playback: elapsed ${elapsed} / ${total}`);
-                    const progress = elapsed / total;
-                    progressBar.style.left = `calc(${progress * 100}% - 8px)`;
-                  } else if (!!data.result.type) {
-                    setResultMessage(`Playback: event ${data.result.type}`);
+                    if (
+                      typeof elapsed === "number" &&
+                      typeof total === "number"
+                    ) {
+                      setResultMessage(
+                        `Playback: elapsed ${elapsed} / ${total}`
+                      );
+
+                      const progress = elapsed / total;
+                      progressBar.style.left = `calc(${progress * 100}% - 8px)`;
+                    } else if (!!data.result.type) {
+                      setResultMessage(`Playback: event ${data.result.type}`);
+                    }
                   }
-                }
-              },
-              complete: console.log,
-            })
+                },
+                complete: console.log
+              });
 
             setResultMessage(`Successfully started video playback!`);
           } catch (e) {
@@ -151,7 +205,7 @@
           } finally {
             incrementInvocationCount();
           }
-        }
+        };
       })();
 
       function sleepForSomeTime() {
@@ -159,25 +213,30 @@
         var currentTime = new Date().getTime();
         while (currentTime + timeToSleep >= new Date().getTime()) {}
       }
-    
+
       (function setLoadedModules() {
         document.getElementById("module-list").innerHTML = `Modules: [${[
-          !!window.MediaModule && 'AndroidMediaModule',
-          !!window.StorageModule && 'AndroidStorageModule',
+          !!window.LocationModule && "AndroidLocationModule",
+          !!window.MediaModule && "AndroidMediaModule",
+          !!window.StorageModule && "AndroidStorageModule",
           ...(function() {
             if (window.webkit && window.webkit.messageHandlers) {
               return [
-                !!window.webkit.messageHandlers.MediaModule && 'IOSMediaModule',
-                !!window.webkit.messageHandlers.StorageModule && 'IOSStorageModule'
+                !!window.webkit.messageHandlers.MediaModule && "IOSMediaModule",
+                !!window.webkit.messageHandlers.StorageModule &&
+                  "IOSStorageModule"
               ];
             } else {
               return [];
             }
           })(),
-          !!mediaModule && 'WrappedMediaModule',
-          !!storageModule && 'WrappedStorageModule',
+          !!locationModule && "WrappedLocationModule",
+          !!mediaModule && "WrappedMediaModule",
+          !!storageModule && "WrappedStorageModule"
         ].filter(md => !!md)}]`;
       })();
+
+      observeLocationChange();
     </script>
   </body>
 </html>

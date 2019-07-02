@@ -3,6 +3,7 @@
   font-size: 0.95em;
   margin: 0px;
   padding: 0px;
+  word-break: break-word;
 }
 
 /* ################################## Root ################################## */
@@ -17,14 +18,19 @@
   margin-top: 16px;
 }
 
-#root > #module-list, #root > #invoke-result, #root > #invoke-count {
+#root > #module-list,
+#root > #invoke-result,
+#root > #invoke-count {
   display: flex;
   justify-content: center;
   text-align: center;
-  word-break: break-all;
 }
 
-#root > .storage-container, #root > .media-container, #root > .debug-container {
+#root > .storage-container,
+#root > .location-container,
+#root > .media-container,
+#root > .debug-container {
+  align-items: center;
   display: flex;
 }
 
@@ -32,6 +38,7 @@
   align-items: center;
   border: 0.5px solid black;
   display: flex;
+  flex: 0 0 calc((100% - 32px) / 3);
   height: 48px;
   justify-content: center;
 }
@@ -56,7 +63,8 @@
   margin-left: 16px;
 }
 
-.storage-container > .key, .storage-container > .value {
+.storage-container > .key,
+.storage-container > .value {
   align-items: center;
   display: flex;
   height: 48px;
@@ -69,21 +77,24 @@
   overflow: hidden;
 }
 
+/* ################################ Location ################################ */
+
+.location-container > .current-coordinate {
+  margin-left: 16px;
+  width: 100%;
+}
+
 /* ################################# Media ################################# */
 
 .media-container > *:not(:first-child) {
   margin-left: 16px;
 }
 
-.media-container > .instruction {
-  width: calc((100% - 32px) / 3);
-}
-
 .media-container > .progress-container {
   align-items: center;
   display: flex;
   position: relative;
-  width: calc(100% * 2 / 3)
+  width: calc(100% * 2 / 3);
 }
 
 .progress-container > .progress-line {
@@ -98,10 +109,4 @@
   left: calc(0% - 8px);
   position: absolute;
   width: 16px;
-}
-
-/* ################################# Debug ################################# */
-
-.debug-container > .instruction {
-  width: calc((100% - 32px) / 3);
 }
