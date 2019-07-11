@@ -18,9 +18,10 @@
       <div id="invoke-result">Waiting for some result</div>
       <div id="invoke-count">Invocation count: 0</div>
 
-      <div class="storage-container">
+      <div class="storage-container feature-container">
         <div class="instruction">Set value</div>
         <input class="set-key key" placeholder="Key" value="DefKey" />
+
         <input
           class="set-value value"
           onkeyup="setValue()"
@@ -28,7 +29,7 @@
         />
       </div>
 
-      <div class="storage-container">
+      <div class="storage-container feature-container">
         <div
           class="instruction actionable"
           onclick="observeValueOrUnsubscribe()"
@@ -44,12 +45,23 @@
         <div class="observe-value value"></div>
       </div>
 
-      <div class="location-container">
-        <div class="instruction">Coordinates</div>
-        <div class="current-coordinate"></div>
+      <div class="location-container feature-container">
+        <div class="instruction actionable" onclick="observeLocationChange()">
+          Observe app coordinate
+        </div>
+
+        <div class="app-coordinate"></div>
       </div>
 
-      <div class="media-container">
+      <div class="location-container feature-container">
+        <div class="instruction actionable" onclick="getBrowserCoordinate()">
+          Get browser coordinate
+        </div>
+
+        <div class="browser-coordinate"></div>
+      </div>
+
+      <div class="media-container feature-container">
         <div class="instruction actionable" onclick="playVideoStream()">
           Play video
         </div>
@@ -60,7 +72,7 @@
         </div>
       </div>
 
-      <div class="debug-container">
+      <div class="debug-container feature-container">
         <div class="instruction actionable" onclick="sleepForSomeTime()">
           Sleep a bit
         </div>
@@ -107,6 +119,7 @@
         const instructionDiv = document.getElementsByClassName(
           "instruction"
         )[1];
+
         const key = document.getElementsByClassName("observe-key")[0].value;
 
         return async function() {
@@ -144,19 +157,47 @@
 
       const observeLocationChange = (function() {
         const currentCoordinate = document.getElementsByClassName(
-          "current-coordinate"
+          "app-coordinate"
         )[0];
 
+        let subscription = null;
+
         return function() {
+          !!subscription && subscription.unsubscribe();
+
           try {
-            locationModule.invoke("observeLocationChange").subscribe({
-              next: data => {
-                if (!!data.result) {
-                  const { latitude, longitude } = data.result;
-                  currentCoordinate.innerHTML = `Lat: ${latitude}<br/>Lng: ${longitude}`;
+            subscription = locationModule
+              .invoke("observeLocationChange")
+              .subscribe({
+                next: data => {
+                  if (!!data.result) {
+                    const { latitude, longitude } = data.result;
+                    currentCoordinate.innerHTML = `Lat: ${latitude}<br/>Lng: ${longitude}`;
+                  }
                 }
-              }
+              });
+          } catch (e) {
+            setResultError(e);
+          } finally {
+            incrementInvocationCount();
+          }
+        };
+      })();
+
+      const getBrowserCoordinate = (function() {
+        const currentCoordinate = document.getElementsByClassName(
+          "browser-coordinate"
+        )[0];
+
+        return async function() {
+          try {
+            const {
+              coords: { latitude, longitude }
+            } = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject);
             });
+
+            currentCoordinate.innerHTML = `Lat: ${latitude}<br/>Lng: ${longitude}`;
           } catch (e) {
             setResultError(e);
           } finally {
@@ -237,8 +278,6 @@
           !!storageModule && "WrappedStorageModule"
         ].filter(md => !!md)}]`;
       })();
-
-      observeLocationChange();
     </script>
   </body>
 </html>

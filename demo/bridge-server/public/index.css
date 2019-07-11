@@ -26,12 +26,19 @@
   text-align: center;
 }
 
-#root > .storage-container,
-#root > .location-container,
-#root > .media-container,
-#root > .debug-container {
+#root > .feature-container {
   align-items: center;
   display: flex;
+  height: 48px;
+}
+
+#root > .feature-container > *:not(:first-child) {
+  margin-left: 16px;
+  width: calc(100% / 2);
+}
+
+#root > .feature-container > * {
+  height: 100%;
 }
 
 #root .instruction {
@@ -39,7 +46,6 @@
   border: 0.5px solid black;
   display: flex;
   flex: 0 0 calc((100% - 32px) / 3);
-  height: 48px;
   justify-content: center;
 }
 
@@ -47,6 +53,7 @@
   background-color: grey;
   border: none;
   color: white;
+  cursor: pointer;
 }
 
 #root input {
@@ -67,7 +74,6 @@
 .storage-container > .value {
   align-items: center;
   display: flex;
-  height: 48px;
   justify-content: center;
   text-align: center;
 }
@@ -79,16 +85,17 @@
 
 /* ################################ Location ################################ */
 
-.location-container > .current-coordinate {
-  margin-left: 16px;
-  width: 100%;
+.location-container > .app-coordinate {
+  align-items: center;
+  display: flex;
+}
+
+.location-container > .browser-coordinate {
+  align-items: center;
+  display: flex;
 }
 
 /* ################################# Media ################################# */
-
-.media-container > *:not(:first-child) {
-  margin-left: 16px;
-}
 
 .media-container > .progress-container {
   align-items: center;
