@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  WebViewController.swift
 //  BridgeDemoIOS
 //
 //  Created by Viethai Pham on 1/4/19.
@@ -9,7 +9,7 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController {
+class WebViewController: UIViewController {
   override func loadView() {
     super.loadView()
     let locationModule = LocationModule()
@@ -35,7 +35,7 @@ class ViewController: UIViewController {
   }
 }
 
-extension ViewController: BridgeDelegate {
+extension WebViewController: BridgeDelegate {
   func evaluateJavaScript(_ javascript: String, completionHandler: ((Any?, Error?) -> Void)?) {
     DispatchQueue.main.async {
       (self.view!.subviews.first(where: {$0 is WKWebView}) as! WKWebView)

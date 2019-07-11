@@ -10,11 +10,12 @@
 		925CE38C63754A83B1E4DACF /* Pods_BridgeDemoIOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CCDA3D579883E05A7E0C9374 /* Pods_BridgeDemoIOS.framework */; };
 		EE2415B722CB5E0400E0E0A3 /* LocationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2415B622CB5E0400E0E0A3 /* LocationModule.swift */; };
 		EE2415B922CB5F6D00E0E0A3 /* LocationModuleBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2415B822CB5F6D00E0E0A3 /* LocationModuleBridge.swift */; };
+		EE26694122D6F9CC0028EB5F /* RouterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE26694022D6F9CC0028EB5F /* RouterViewController.swift */; };
 		EE5F7B512256F02200553BA4 /* MediaModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE5F7B502256F02200553BA4 /* MediaModule.swift */; };
 		EE5F7B532256F1FF00553BA4 /* BaseModuleBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE5F7B522256F1FF00553BA4 /* BaseModuleBridge.swift */; };
 		EE5F7B552256F9CB00553BA4 /* MediaModuleBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE5F7B542256F9CB00553BA4 /* MediaModuleBridge.swift */; };
 		EECE55432251F8920093C8AC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55422251F8920093C8AC /* AppDelegate.swift */; };
-		EECE55452251F8920093C8AC /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55442251F8920093C8AC /* ViewController.swift */; };
+		EECE55452251F8920093C8AC /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECE55442251F8920093C8AC /* WebViewController.swift */; };
 		EECE55482251F8920093C8AC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EECE55462251F8920093C8AC /* Main.storyboard */; };
 		EECE554A2251F8930093C8AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EECE55492251F8930093C8AC /* Assets.xcassets */; };
 		EECE554D2251F8930093C8AC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EECE554B2251F8930093C8AC /* LaunchScreen.storyboard */; };
@@ -28,12 +29,13 @@
 		CCDA3D579883E05A7E0C9374 /* Pods_BridgeDemoIOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BridgeDemoIOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE2415B622CB5E0400E0E0A3 /* LocationModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationModule.swift; sourceTree = "<group>"; };
 		EE2415B822CB5F6D00E0E0A3 /* LocationModuleBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationModuleBridge.swift; sourceTree = "<group>"; };
+		EE26694022D6F9CC0028EB5F /* RouterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouterViewController.swift; sourceTree = "<group>"; };
 		EE5F7B502256F02200553BA4 /* MediaModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaModule.swift; sourceTree = "<group>"; };
 		EE5F7B522256F1FF00553BA4 /* BaseModuleBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseModuleBridge.swift; sourceTree = "<group>"; };
 		EE5F7B542256F9CB00553BA4 /* MediaModuleBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaModuleBridge.swift; sourceTree = "<group>"; };
 		EECE553F2251F8920093C8AC /* BridgeDemoIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BridgeDemoIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EECE55422251F8920093C8AC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		EECE55442251F8920093C8AC /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		EECE55442251F8920093C8AC /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		EECE55472251F8920093C8AC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		EECE55492251F8930093C8AC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EECE554C2251F8930093C8AC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -90,9 +92,10 @@
 				EE2415B822CB5F6D00E0E0A3 /* LocationModuleBridge.swift */,
 				EE5F7B502256F02200553BA4 /* MediaModule.swift */,
 				EE5F7B542256F9CB00553BA4 /* MediaModuleBridge.swift */,
+				EE26694022D6F9CC0028EB5F /* RouterViewController.swift */,
 				EECE55542251F99A0093C8AC /* StorageModule.swift */,
 				EECE55562251F9A50093C8AC /* StorageModuleBridge.swift */,
-				EECE55442251F8920093C8AC /* ViewController.swift */,
+				EECE55442251F8920093C8AC /* WebViewController.swift */,
 				EECE55492251F8930093C8AC /* Assets.xcassets */,
 				EECE554B2251F8930093C8AC /* LaunchScreen.storyboard */,
 				EECE55462251F8920093C8AC /* Main.storyboard */,
@@ -230,7 +233,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE5F7B512256F02200553BA4 /* MediaModule.swift in Sources */,
-				EECE55452251F8920093C8AC /* ViewController.swift in Sources */,
+				EECE55452251F8920093C8AC /* WebViewController.swift in Sources */,
 				EE2415B922CB5F6D00E0E0A3 /* LocationModuleBridge.swift in Sources */,
 				EECE55432251F8920093C8AC /* AppDelegate.swift in Sources */,
 				EE5F7B532256F1FF00553BA4 /* BaseModuleBridge.swift in Sources */,
@@ -238,6 +241,7 @@
 				EECE55572251F9A50093C8AC /* StorageModuleBridge.swift in Sources */,
 				EE2415B722CB5E0400E0E0A3 /* LocationModule.swift in Sources */,
 				EE5F7B552256F9CB00553BA4 /* MediaModuleBridge.swift in Sources */,
+				EE26694122D6F9CC0028EB5F /* RouterViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
