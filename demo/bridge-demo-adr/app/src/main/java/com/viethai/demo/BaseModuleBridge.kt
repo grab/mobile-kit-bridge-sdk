@@ -47,18 +47,27 @@ open class BaseModuleBridge(private val webView: WebView, protected val gson: Gs
   protected fun <T> sendStreamResponse(request: Request, stream: Flowable<T>) {
     var disposable = Disposables.fromAction {  }
 
+    val ifCallbackAvailable: (BaseModuleBridge, () -> Unit) -> Unit = { a, b ->
+      if (a.isCallbackAvailableSync(request.callback)) b() else disposable.dispose()
+    }
+
     disposable = stream
       .observeOn(Schedulers.computation())
       .subscribe({ data ->
-        if (this@BaseModuleBridge.isCallbackAvailableSync(request.callback)) {
+        ifCallbackAvailable(this@BaseModuleBridge) {
           val response = Response(data, null, 200)
           this@BaseModuleBridge.sendResponse(request, response)
-        } else {
-          disposable.dispose()
         }
-      }, {}, {
-        val response = BaseModuleBridge.Response(BaseModuleBridge.StreamEvent.Complete, null, 200)
-        this@BaseModuleBridge.sendResponse(request, response)
+      }, { error ->
+        ifCallbackAvailable(this@BaseModuleBridge) {
+          val response = Response(null, error, 200)
+          this@BaseModuleBridge.sendResponse(request, response)
+        }
+      }, {
+        ifCallbackAvailable(this@BaseModuleBridge) {
+          val response = Response(BaseModuleBridge.StreamEvent.Complete, null, 200)
+          this@BaseModuleBridge.sendResponse(request, response)
+        }
       })
   }
 }

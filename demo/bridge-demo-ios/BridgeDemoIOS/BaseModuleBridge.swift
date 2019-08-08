@@ -116,9 +116,12 @@ public class BaseModuleBridge: NSObject {
         },
         onCompleted: {[weak self] in
           guard let this = self else { return }
-          let eventResult = StreamEvent.completed.toDictionary()
-          let response = CallbackResponse(result: eventResult, error: nil, status_code: 200)
-          _ = this.sendResult(response: response, callback: callback)
+          
+          ifCallbackAvailable(this) {
+            let eventResult = StreamEvent.completed.toDictionary()
+            let response = CallbackResponse(result: eventResult, error: nil, status_code: 200)
+            _ = this.sendResult(response: response, callback: callback)
+          }
         },
         onDisposed: {}
       )
