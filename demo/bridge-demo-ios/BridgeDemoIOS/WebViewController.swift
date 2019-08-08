@@ -33,6 +33,20 @@ class WebViewController: UIViewController {
     let request = URLRequest(url: url)
     webView.load(request)
   }
+  
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    
+    self.navigationItem.rightBarButtonItem = UIBarButtonItem(
+      title: "Reload",
+      style: .done,
+      target: self,
+      action: #selector(self.reloadWebView(_:)))
+  }
+  
+  @objc func reloadWebView(_ sender: UIBarButtonItem) {
+    self.view!.subviews.compactMap({$0 as? WKWebView}).forEach({_ = $0.reload()})
+  }
 }
 
 extension WebViewController: BridgeDelegate {
