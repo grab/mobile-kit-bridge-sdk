@@ -43,9 +43,11 @@ public class BaseModuleBridge: NSObject {
   }
   
   private weak var delegate: BridgeDelegate?
+  let disposeBag: DisposeBag
   
   public init(_ delegate: BridgeDelegate) {
     self.delegate = delegate
+    self.disposeBag = DisposeBag()
   }
   
   func isCallbackAvailable(callback: String, cb: @escaping (Bool) -> Void) {
@@ -79,8 +81,18 @@ public class BaseModuleBridge: NSObject {
     self.delegate?.evaluateJavaScript(callbackString, completionHandler: cb)
   }
   
-  func sendStreamResult<R>(stream: Observable<R>, callback: String) where R: ResponseType {
+  func sendStreamResult<R>(stream: Observable<R>, callback: String)
+    -> Disposable where R: ResponseType
+  {
     var disposable = Disposables.create()
+    
+    let ifCallbackAvailable: (BaseModuleBridge, () -> Void) -> Void = {
+      if ($0.isCallbackAvailableSync(callback: callback)) {
+        $1()
+      } else {
+        disposable.dispose()
+      }
+    }
     
     disposable = stream
       .observeOn(ConcurrentDispatchQueueScheduler(qos: .background))
@@ -88,15 +100,20 @@ public class BaseModuleBridge: NSObject {
         onNext: {[weak self] (data: ResponseType) in
           guard let this = self else { return }
           
-          if (this.isCallbackAvailableSync(callback: callback)) {
+          ifCallbackAvailable(this) {
             let dict = data.toDictionary()
             let response = CallbackResponse(result: dict, error: nil, status_code: 200)
             _ = this.sendResult(response: response, callback: callback)
-          } else {
-            disposable.dispose()
           }
         },
-        onError: {_ in},
+        onError: {[weak self] error in
+          guard let this = self else { return }
+          
+          ifCallbackAvailable(this) {
+            let response = CallbackResponse(result: nil, error: error, status_code: 404)
+            _ = this.sendResult(response: response, callback: callback)
+          }
+        },
         onCompleted: {[weak self] in
           guard let this = self else { return }
           let eventResult = StreamEvent.completed.toDictionary()
@@ -105,5 +122,7 @@ public class BaseModuleBridge: NSObject {
         },
         onDisposed: {}
       )
+    
+    return disposable
   }
 }

@@ -27,7 +27,9 @@ extension LocationModuleBridge: WKScriptMessageHandler {
     switch method {
     case "observeLocationChange":
       let locationStream = self.module.observeLocationChange()
-      sendStreamResult(stream: locationStream, callback: callback)
+      
+      self.sendStreamResult(stream: locationStream, callback: callback)
+        .disposed(by: self.disposeBag)
       
     default:
       break

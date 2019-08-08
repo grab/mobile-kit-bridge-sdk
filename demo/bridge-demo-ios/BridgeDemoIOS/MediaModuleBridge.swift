@@ -27,7 +27,9 @@ extension MediaModuleBridge: WKScriptMessageHandler {
     switch method {
     case "playVideo":
       let videoStream = self.module.playVideo()
-      sendStreamResult(stream: videoStream, callback: callback)
+      
+      self.sendStreamResult(stream: videoStream, callback: callback)
+        .disposed(by: self.disposeBag)
       
     default:
       break
