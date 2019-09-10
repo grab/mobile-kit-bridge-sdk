@@ -10,17 +10,23 @@ stages:
 
 build:
   stage: build
-  script: 
+  artifacts:
+    paths:
+      - dist
+      - LICENSE.md
+      - README.md
+      - package.json
+    expire_in: 5 minutes
+  script:
     - npm install
     - npm run build
 
 deploy-to-npm:
-    stage: deploy
-    script: 
-      - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ./.npmrc
-      - npm publish
-    only:
+  stage: deploy
+  dependencies:
+    - build
+  script:
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ./.npmrc
+    - npm publish
+  only:
     - /^v[0-9]+\.[0-9]+\.[0-9]$/
-    # Do not run on branches
-    except:
-      - branches
