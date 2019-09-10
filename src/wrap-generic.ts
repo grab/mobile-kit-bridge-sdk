@@ -47,6 +47,7 @@ export function wrapGenericModule(
           moduleMethodFunc({
             callback,
             method,
+            module: moduleName,
             parameters: params !== undefined && params !== null ? params : {}
           })
       });

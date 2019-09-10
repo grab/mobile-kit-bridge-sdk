@@ -13,6 +13,9 @@ export type DefaultParameters = Readonly<{ isStream: unknown }>;
 
 /** Method parameters for native methods. */
 export type NativeParameter<Params = { [K: string]: unknown }> = Readonly<{
+  /** The module name. */
+  module: string;
+
   /** The method name. */
   method: string;
 
