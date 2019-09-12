@@ -12,7 +12,7 @@ import { describe, it } from 'mocha';
 import { CallbackResult, StreamEvent } from './index';
 import { createDataStream, createSubscription } from './subscription';
 import { NativeParameter, wrapModuleName } from './utils';
-import { wrapModule } from './wrap-global';
+import { wrapModule, getModuleEnvironment } from './wrap-global';
 
 const testTimeout = 5000;
 
@@ -622,5 +622,28 @@ describe('Utility functions should work correctly', () => {
         resolve(undefined);
       }, 500);
     });
+  });
+});
+
+describe('Utilities', () => {
+  it('Should get module environment correctly', async () => {
+    // Setup
+    const moduleName = 'Module';
+
+    // When && Then: Android
+    expectJs(getModuleEnvironment({ [moduleName]: {} }, moduleName)).to.eql(
+      'android'
+    );
+
+    // When && Then: iOS
+    expectJs(
+      getModuleEnvironment(
+        { webkit: { messageHandlers: { [moduleName]: {} } } },
+        moduleName
+      )
+    ).to.eql('ios');
+
+    // When && Then: None
+    expectJs(getModuleEnvironment({}, moduleName)).not.to.be.ok();
   });
 });

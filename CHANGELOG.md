@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.2.0
+
+### New features
+
+- Get `getModuleEnvironment` to get a module's current mobile environment.
+
 ## v1.1.2
 
 ### Improvements

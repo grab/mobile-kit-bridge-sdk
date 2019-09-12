@@ -9,6 +9,28 @@ import { wrapModuleName } from './utils';
 import { wrapGenericModule } from './wrap-generic';
 
 /**
+ * Get the module's mobile environment.
+ * @param globalObject The global object - generally window.
+ * @param moduleName The name of the module being wrapped.
+ */
+export function getModuleEnvironment(
+  globalObject: any,
+  moduleName: string
+): 'android' | 'ios' | undefined {
+  if (!!globalObject[moduleName]) {
+    return 'android';
+  } else if (
+    !!globalObject.webkit &&
+    !!globalObject.webkit.messageHandlers &&
+    !!globalObject.webkit.messageHandlers[moduleName]
+  ) {
+    return 'ios';
+  }
+
+  return undefined;
+}
+
+/**
  * Wrap the appropriate module based on whether or not it's Android/iOS.
  * @param globalObject The global object - generally window.
  * @param moduleName The name of the module being wrapped.
