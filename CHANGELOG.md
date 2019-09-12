@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.1.2
+
+### Improvements
+
+- Add type parameter to `CallbackResult`, so now it is `CallbackResult<T>`.
+
 ## v1.1.1
 
 ### Improvements
