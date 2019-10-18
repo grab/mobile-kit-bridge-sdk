@@ -12,7 +12,7 @@ import { describe, it } from 'mocha';
 import { CallbackResult, StreamEvent } from './index';
 import { createDataStream, createSubscription } from './subscription';
 import { NativeParameter, wrapModuleName } from './utils';
-import { wrapModule, getModuleEnvironment } from './wrap-global';
+import { getModuleEnvironment, wrapModule } from './wrap-global';
 
 const testTimeout = 5000;
 
@@ -325,12 +325,14 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const interval = 200;
     const timeout = 2100;
     const streamTimeout = 1100;
-    const streamedVals: CallbackResult[] = [];
+    const streamedVals: CallbackResult<unknown>[] = [];
 
     // When
     const subscription = globalObject[wrappedName]
       .invoke('observeGetSomething', { interval })
-      .subscribe({ next: (value: CallbackResult) => streamedVals.push(value) });
+      .subscribe({
+        next: (value: CallbackResult<unknown>) => streamedVals.push(value)
+      });
 
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
@@ -354,14 +356,14 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const wrappedName = wrapModuleName(moduleName);
     const streamTimeout = 500;
     const timeout = 1000;
-    const streamedValues: CallbackResult[] = [];
+    const streamedValues: CallbackResult<unknown>[] = [];
     let completed = false;
 
     // When
     const subscription = globalObject[wrappedName]
       .invoke('observeGetSomethingWithTerminate', { timeout: streamTimeout })
       .subscribe({
-        next: (value: CallbackResult) => streamedValues.push(value),
+        next: (value: CallbackResult<unknown>) => streamedValues.push(value),
         complete: () => (completed = true)
       });
 

@@ -26,7 +26,7 @@ export type NativeParameter<Params = { [K: string]: unknown }> = Readonly<{
   callback: string;
 }>;
 
-export type CallbackResult<T = unknown> = Readonly<{
+export type CallbackResult<T> = Readonly<{
   /** The result of the operation. */
   result: T;
 

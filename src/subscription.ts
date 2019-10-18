@@ -14,8 +14,8 @@ export type Subscription = Readonly<{
 }>;
 
 /** Represents functions that can handle stream events. */
-export type DataStreamHandlers = Readonly<{
-  next?: (data: CallbackResult) => unknown;
+export type DataStreamHandlers<T> = Readonly<{
+  next?: (data: CallbackResult<T>) => unknown;
   complete?: () => unknown;
 }>;
 
@@ -27,11 +27,12 @@ export type DataStreamHandlers = Readonly<{
  * Note that this stream currently does not support error notifications like
  * an Observable would. All errors will be included in the data payload, so as
  * to simplify workflow for end-users.
+ * @template T The emission value type.
  */
-export type DataStream = Readonly<{
-  subscribe: (handlers?: DataStreamHandlers) => Subscription;
+export type DataStream<T> = Readonly<{
+  subscribe: (handlers?: DataStreamHandlers<T>) => Subscription;
 }> &
-  PromiseLike<CallbackResult>;
+  PromiseLike<CallbackResult<T>>;
 
 /**
  * Create a subscription that can only be unsubscribed from once.
@@ -62,9 +63,9 @@ export function createSubscription(unsubscribe: () => unknown): Subscription {
  * @param subscribe Injected subscribe function.
  * @return A DataStream instance.
  */
-export function createDataStream(
-  subscribe: DataStream['subscribe']
-): DataStream {
+export function createDataStream<T>(
+  subscribe: DataStream<T>['subscribe']
+): DataStream<T> {
   return {
     subscribe,
     then: (onFulfilled, onRejected) => {

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.2.2
+
+### Improvements
+
+- Add value type to `DataStream`.
+
 ## v1.2.1
 
 ### Improvements
