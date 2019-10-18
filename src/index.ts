@@ -6,6 +6,12 @@
  */
 
 export { StreamEvent, StreamEventResult } from './simplify-callback';
-export { DataStream, DataStreamHandlers, Subscription } from './subscription';
+export {
+  createDataStream,
+  createSubscription,
+  DataStream,
+  DataStreamHandlers,
+  Subscription
+} from './subscription';
 export { CallbackResult, NativeParameter } from './utils';
 export { getModuleEnvironment, wrapModule } from './wrap-global';

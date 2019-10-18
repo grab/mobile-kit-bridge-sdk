@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.2.1
+
+### Improvements
+
+- Expose `createDataStream` and `createSubscription`.
+
 ## v1.2.0
 
 ### New features
