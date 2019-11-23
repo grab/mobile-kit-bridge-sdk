@@ -5,8 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { simplifyCallback } from './simplify-callback';
-import { DefaultParameters, getCallbackName, NativeParameter } from './utils';
+import { simplifyCallback } from "./simplify-callback";
+import {
+  DefaultParameters,
+  getFirstAvailableCallbackName,
+  NativeParameter
+} from "./utils";
 
 /** Represents a wrapped generic module. */
 type WrappedModule = Readonly<{
@@ -32,17 +36,15 @@ export function wrapGenericModule(
   moduleName: string,
   moduleMethodFunc: (params: NativeParameter) => unknown
 ): WrappedModule {
-  const methodRequestIDMap: { [K: string]: number } = {};
-
   return {
     invoke: (method, params) => {
       return simplifyCallback(globalObject, {
         funcNameToWrap: method,
-        callbackNameFunc: () => {
-          const requestID = methodRequestIDMap[method] || 0;
-          methodRequestIDMap[method] = requestID + 1;
-          return getCallbackName({ moduleName, requestID, funcName: method });
-        },
+        callbackNameFunc: () =>
+          getFirstAvailableCallbackName(globalObject, {
+            moduleName,
+            funcName: method
+          }),
         funcToWrap: callback =>
           moduleMethodFunc({
             callback,

@@ -10,8 +10,8 @@ import {
   createSubscription,
   DataStream,
   Subscription
-} from './subscription';
-import { CallbackResult, isType, Omit } from './utils';
+} from "./subscription";
+import { CallbackResult, isType, Omit } from "./utils";
 
 type Params = Readonly<{
   /** The name of the function to be wrapped. */
@@ -29,7 +29,7 @@ type Params = Readonly<{
  * from native to web.
  */
 export enum StreamEvent {
-  STREAM_TERMINATED = 'STREAM_TERMINATED'
+  STREAM_TERMINATED = "STREAM_TERMINATED"
 }
 
 /**
@@ -49,7 +49,7 @@ export type StreamEventResult = Readonly<{
  */
 function streamCallback<T>(
   globalObject: any,
-  { callbackNameFunc, funcToWrap }: Omit<Params, 'funcNameToWrap'>
+  { callbackNameFunc, funcToWrap }: Omit<Params, "funcNameToWrap">
 ): DataStream<T> {
   return createDataStream(
     (handlers): Subscription => {
@@ -58,8 +58,8 @@ function streamCallback<T>(
       let subscription: Subscription;
 
       globalObject[callbackName] = (data: CallbackResult<T>) => {
-        if (isType<CallbackResult<T>>(data, 'status_code')) {
-          if (isType<StreamEventResult>(data.result, 'event')) {
+        if (isType<CallbackResult<T>>(data, "status_code")) {
+          if (isType<StreamEventResult>(data.result, "event")) {
             switch (data.result.event) {
               case StreamEvent.STREAM_TERMINATED:
                 subscription.unsubscribe();

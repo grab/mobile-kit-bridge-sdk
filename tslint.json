@@ -1,9 +1,0 @@
-{
-  "extends": ["tslint-config-airbnb", "tslint-plugin-prettier"],
-  "rules": {
-    "arrow-parens": false,
-    "quotemark": [true, "single"],
-    "space-before-function-paren": false,
-    "trailing-comma": [true, "all"],
-  }
-}

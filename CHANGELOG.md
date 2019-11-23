@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.0.0
+
+### Breaking changes
+
+- Instead of using closure state to manage callback names, determinate the next available callback name for the global object itself. This prevents unexpected reusing of callback names (e.g. when web page is reloaded but mobile is not aware).
+
 ## v1.2.2
 
 ### Improvements

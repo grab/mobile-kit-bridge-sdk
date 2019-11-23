@@ -68,7 +68,39 @@ export function getCallbackName({
   /** The request ID of the callback. */
   requestID: number | string | null;
 }>): string {
-  return `${moduleName}_${funcName}Callback${req !== null ? `_${req}` : ''}`;
+  return `${moduleName}_${funcName}Callback${req !== null ? `_${req}` : ""}`;
+}
+
+/**
+ * Instead of keeping state, find the first available callback name by
+ * iterating through all callback names in the global object and pick the next
+ * one.
+ */
+export function getFirstAvailableCallbackName(
+  globalObject: any,
+  {
+    moduleName,
+    funcName
+  }: Omit<Parameters<typeof getCallbackName>[0], "requestID">
+): string {
+  let nextAvailableRequestID = 0;
+
+  return (() => {
+    let callbackName = "";
+
+    while (
+      (callbackName = getCallbackName({
+        moduleName,
+        funcName,
+        requestID: nextAvailableRequestID
+      })) in globalObject
+    ) {
+      nextAvailableRequestID += 1;
+    }
+
+    nextAvailableRequestID += 1;
+    return callbackName;
+  })();
 }
 
 /**

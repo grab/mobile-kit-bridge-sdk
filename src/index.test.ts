@@ -5,18 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { fail } from 'assert';
-import bluebird from 'bluebird';
-import expectJs from 'expect.js';
-import { describe, it } from 'mocha';
-import { CallbackResult, StreamEvent } from './index';
-import { createDataStream, createSubscription } from './subscription';
-import { NativeParameter, wrapModuleName } from './utils';
-import { getModuleEnvironment, wrapModule } from './wrap-global';
+import { fail } from "assert";
+import bluebird from "bluebird";
+import expectJs from "expect.js";
+import { describe, it } from "mocha";
+import { CallbackResult, StreamEvent } from "./index";
+import { createDataStream, createSubscription } from "./subscription";
+import {
+  NativeParameter,
+  wrapModuleName,
+  getCallbackName,
+  getFirstAvailableCallbackName
+} from "./utils";
+import { getModuleEnvironment, wrapModule } from "./wrap-global";
 
 const testTimeout = 5000;
 
-describe('Module wrappers should wrap platform modules correctly', () => {
+describe("Module wrappers should wrap platform modules correctly", () => {
   function formatResult(param1: unknown, param2: unknown) {
     return `${param1}-${param2}`;
   }
@@ -27,7 +32,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
   function createTestADRModule(globalObject: any) {
     return {
-      name: 'TestADRModule',
+      name: "TestADRModule",
       doSomethingWithoutParameter(params: string) {
         const { callback }: NativeParameter<{}> = JSON.parse(params);
         globalObject[callback]({ result: null, error: null, status_code: 200 });
@@ -110,10 +115,10 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
   function createTestIOSModule(globalObject: any) {
     return {
-      name: 'TestIOSModule',
+      name: "TestIOSModule",
       postMessage: ({ method, parameters, callback }: NativeParameter) => {
         switch (method) {
-          case 'doSomethingWithoutParameter':
+          case "doSomethingWithoutParameter":
             globalObject[callback]({
               result: null,
               error: null,
@@ -122,7 +127,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
             break;
 
-          case 'doSomethingWithFalsyParameter':
+          case "doSomethingWithFalsyParameter":
             globalObject[callback]({
               result: parameters,
               error: null,
@@ -131,7 +136,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
             break;
 
-          case 'getSomething':
+          case "getSomething":
             globalObject[callback]({
               result: formatResult(parameters.param1, parameters.param2),
               error: null,
@@ -140,42 +145,36 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
             break;
 
-          case 'observeGetSomething':
+          case "observeGetSomething":
             let count = 0;
 
-            const intervalID = setInterval(
-              () => {
-                if (globalObject[callback]) {
-                  globalObject[callback]({
-                    result: count,
-                    error: null,
-                    status_code: 200
-                  });
-
-                  count += 1;
-                } else {
-                  clearInterval(intervalID);
-                }
-              },
-              parameters.interval as number
-            );
-
-            break;
-
-          case 'observeGetSomethingWithTerminate':
-            setTimeout(
-              () => {
+            const intervalID = setInterval(() => {
+              if (globalObject[callback]) {
                 globalObject[callback]({
-                  result: { event: StreamEvent.STREAM_TERMINATED },
+                  result: count,
+                  error: null,
                   status_code: 200
                 });
-              },
-              parameters.timeout as number
-            );
+
+                count += 1;
+              } else {
+                clearInterval(intervalID);
+              }
+            }, parameters.interval as number);
 
             break;
 
-          case 'throwError':
+          case "observeGetSomethingWithTerminate":
+            setTimeout(() => {
+              globalObject[callback]({
+                result: { event: StreamEvent.STREAM_TERMINATED },
+                status_code: 200
+              });
+            }, parameters.timeout as number);
+
+            break;
+
+          case "throwError":
             globalObject[callback]({
               result: null,
               error: { message: formatError(parameters.param) },
@@ -197,11 +196,11 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const result1 = await globalObject[wrappedName].invoke(
-      'doSomethingWithoutParameter'
+      "doSomethingWithoutParameter"
     );
 
     const result2 = await globalObject[wrappedName].invoke(
-      'doSomethingWithoutParameter',
+      "doSomethingWithoutParameter",
       null
     );
 
@@ -221,19 +220,19 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const result1 = await globalObject[wrappedName].invoke(
-      'doSomethingWithFalsyParameter',
+      "doSomethingWithFalsyParameter",
       0
     );
 
     const result2 = await globalObject[wrappedName].invoke(
-      'doSomethingWithFalsyParameter',
-      ''
+      "doSomethingWithFalsyParameter",
+      ""
     );
 
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
     expectJs(result1).to.eql({ result: 0, error: null, status_code: 200 });
-    expectJs(result2).to.eql({ result: '', error: null, status_code: 200 });
+    expectJs(result2).to.eql({ result: "", error: null, status_code: 200 });
     expectJs(Object.keys(globalObject)).to.have.length(2);
   }
 
@@ -243,11 +242,11 @@ describe('Module wrappers should wrap platform modules correctly', () => {
   ) {
     // Setup
     const wrappedName = wrapModuleName(moduleName);
-    const param1 = '1';
-    const param2 = '2';
+    const param1 = "1";
+    const param2 = "2";
 
     // When
-    const result = await globalObject[wrappedName].invoke('getSomething', {
+    const result = await globalObject[wrappedName].invoke("getSomething", {
       param1,
       param2
     });
@@ -269,10 +268,10 @@ describe('Module wrappers should wrap platform modules correctly', () => {
   ) {
     // Setup
     const wrappedName = wrapModuleName(moduleName);
-    const param = '1';
+    const param = "1";
 
     // When
-    const result = await globalObject[wrappedName].invoke('throwError', {
+    const result = await globalObject[wrappedName].invoke("throwError", {
       param
     });
 
@@ -303,7 +302,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const results = await bluebird.map([...Array(rounds).keys()], v =>
-      globalObject[wrappedName].invoke('getSomething', {
+      globalObject[wrappedName].invoke("getSomething", {
         param1: `${v}`,
         param2: `${v + 1}`
       })
@@ -329,7 +328,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscription = globalObject[wrappedName]
-      .invoke('observeGetSomething', { interval })
+      .invoke("observeGetSomething", { interval })
       .subscribe({
         next: (value: CallbackResult<unknown>) => streamedVals.push(value)
       });
@@ -361,7 +360,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
     // When
     const subscription = globalObject[wrappedName]
-      .invoke('observeGetSomethingWithTerminate', { timeout: streamTimeout })
+      .invoke("observeGetSomethingWithTerminate", { timeout: streamTimeout })
       .subscribe({
         next: (value: CallbackResult<unknown>) => streamedValues.push(value),
         complete: () => (completed = true)
@@ -386,7 +385,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     const wrappedName = wrapModuleName(moduleName);
     const iterations = 1000;
 
-    const stream = globalObject[wrappedName].invoke('observeGetSomething', {
+    const stream = globalObject[wrappedName].invoke("observeGetSomething", {
       param: 1
     });
 
@@ -404,7 +403,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
   // ################################ ANDROID ################################
 
-  it('Should work for Android method without parameters', async function() {
+  it("Should work for Android method without parameters", async function() {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -413,7 +412,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_invokeMethodWithoutParameter_shouldWork(globalObject, adr.name);
   });
 
-  it('Should work for Android method with falsy parameters', async function() {
+  it("Should work for Android method with falsy parameters", async function() {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -422,7 +421,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_invokeMethodWithFalsyParam_shouldWork(globalObject, adr.name);
   });
 
-  it('Should wrap Android method with normal return correctly', async function() {
+  it("Should wrap Android method with normal return correctly", async function() {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -431,7 +430,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethod_withNormalReturn(globalObject, adr.name);
   });
 
-  it('Should wrap Android method with error return correctly', async function() {
+  it("Should wrap Android method with error return correctly", async function() {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -440,7 +439,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethod_withError(globalObject, adr.name);
   });
 
-  it('Should correctly call Android method multiple times', async function() {
+  it("Should correctly call Android method multiple times", async function() {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -449,7 +448,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethod_withMultipleInvocations(globalObject, adr.name);
   });
 
-  it('Should correctly stream values from Android method call', function(done) {
+  it("Should correctly stream values from Android method call", function(done) {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -458,7 +457,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     test_moduleMethod_withStream(globalObject, adr.name, done);
   });
 
-  it('Should terminate stream for Android method call', function(done) {
+  it("Should terminate stream for Android method call", function(done) {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -467,7 +466,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     test_moduleMethod_withTerminatingStream(globalObject, adr.name, done);
   });
 
-  it('Should be idempotent for Android streams', async function() {
+  it("Should be idempotent for Android streams", async function() {
     this.timeout(testTimeout);
     const globalObject: any = {};
     const adr = createTestADRModule(globalObject);
@@ -478,7 +477,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
 
   // ################################## IOS ##################################
 
-  it('Should work for iOS method without parameters', async function() {
+  it("Should work for iOS method without parameters", async function() {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -487,7 +486,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_invokeMethodWithoutParameter_shouldWork(globalObject, ios.name);
   });
 
-  it('Should work for iOS method with falsy parameters', async function() {
+  it("Should work for iOS method with falsy parameters", async function() {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -496,7 +495,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_invokeMethodWithFalsyParam_shouldWork(globalObject, ios.name);
   });
 
-  it('Should wrap iOS method with normal return correctly', async function() {
+  it("Should wrap iOS method with normal return correctly", async function() {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -505,7 +504,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethod_withNormalReturn(globalObject, ios.name);
   });
 
-  it('Should wrap iOS method with error return correctly', async function() {
+  it("Should wrap iOS method with error return correctly", async function() {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -514,7 +513,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethod_withError(globalObject, ios.name);
   });
 
-  it('Should correctly call iOS method multiple times', async function() {
+  it("Should correctly call iOS method multiple times", async function() {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -523,7 +522,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     await test_moduleMethod_withMultipleInvocations(globalObject, ios.name);
   });
 
-  it('Should correctly stream values from iOS method call', function(done) {
+  it("Should correctly stream values from iOS method call", function(done) {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -532,7 +531,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     test_moduleMethod_withStream(globalObject, ios.name, done);
   });
 
-  it('Should terminate stream for iOS method call', function(done) {
+  it("Should terminate stream for iOS method call", function(done) {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -541,7 +540,7 @@ describe('Module wrappers should wrap platform modules correctly', () => {
     test_moduleMethod_withTerminatingStream(globalObject, ios.name, done);
   });
 
-  it('Should be idempotent for iOS streams', async function() {
+  it("Should be idempotent for iOS streams", async function() {
     this.timeout(testTimeout);
     const globalObject: any = { webkit: { messageHandlers: {} } };
     const ios = createTestIOSModule(globalObject);
@@ -551,47 +550,47 @@ describe('Module wrappers should wrap platform modules correctly', () => {
   });
 });
 
-describe('Edge cases for wrapper', () => {
-  it('Should throw error for Promise if no module found', async function() {
+describe("Edge cases for wrapper", () => {
+  it("Should throw error for Promise if no module found", async function() {
     // Setup
     this.timeout(testTimeout);
     const globalObject: any = {};
-    const moduleName = 'NonExistentModule';
+    const moduleName = "NonExistentModule";
     const wrappedName = wrapModuleName(moduleName);
     wrapModule(globalObject, moduleName);
 
     // When && Then
     try {
-      await globalObject[wrappedName].invoke('nonExistentMethod');
-      fail('Never should have come here');
+      await globalObject[wrappedName].invoke("nonExistentMethod");
+      fail("Never should have come here");
     } catch (e) {
       expectJs(e).to.be.ok();
     }
   });
 
-  it('Should throw error for stream if no module found', async function() {
+  it("Should throw error for stream if no module found", async function() {
     // Setup
     this.timeout(testTimeout);
     const globalObject: any = {};
-    const moduleName = 'NonExistentModule';
+    const moduleName = "NonExistentModule";
     const wrappedName = wrapModuleName(moduleName);
     wrapModule(globalObject, moduleName);
 
     // When && Then
     try {
       globalObject[wrappedName]
-        .invoke('nonExistentMethod')
+        .invoke("nonExistentMethod")
         .subscribe({ next: console.log, complete: console.log });
 
-      fail('Never should have come here');
+      fail("Never should have come here");
     } catch (e) {
       expectJs(e).to.be.ok();
     }
   });
 });
 
-describe('Utility functions should work correctly', () => {
-  it('Data stream should support Promise-style chaining', async function() {
+describe("Utility functions should work correctly", () => {
+  it("Data stream should support Promise-style chaining", async function() {
     // Setup
     this.timeout(testTimeout);
     let currentTick = 0;
@@ -625,16 +624,14 @@ describe('Utility functions should work correctly', () => {
       }, 500);
     });
   });
-});
 
-describe('Utilities', () => {
-  it('Should get module environment correctly', async () => {
+  it("Should get module environment correctly", async () => {
     // Setup
-    const moduleName = 'Module';
+    const moduleName = "Module";
 
     // When && Then: Android
     expectJs(getModuleEnvironment({ [moduleName]: {} }, moduleName)).to.eql(
-      'android'
+      "android"
     );
 
     // When && Then: iOS
@@ -643,9 +640,37 @@ describe('Utilities', () => {
         { webkit: { messageHandlers: { [moduleName]: {} } } },
         moduleName
       )
-    ).to.eql('ios');
+    ).to.eql("ios");
 
     // When && Then: None
     expectJs(getModuleEnvironment({}, moduleName)).not.to.be.ok();
+  });
+
+  it("Should get first available callback name correctly", async () => {
+    // Setup
+    const moduleName = "Module";
+    const funcName = "Func";
+    const cutoffID = 4;
+
+    const global = [...Array(10).keys()]
+      .map(requestID => (requestID < cutoffID ? requestID : requestID + 10))
+      .reduce(
+        (acc, requestID) => ({
+          ...acc,
+          [getCallbackName({ moduleName, funcName, requestID })]: () => {}
+        }),
+        {}
+      );
+
+    // When
+    const nextCallbackName = getFirstAvailableCallbackName(global, {
+      moduleName,
+      funcName
+    });
+
+    // Then
+    expectJs(nextCallbackName).to.eql(
+      getCallbackName({ moduleName, funcName, requestID: cutoffID })
+    );
   });
 });
