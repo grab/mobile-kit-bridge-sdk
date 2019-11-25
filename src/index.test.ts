@@ -30,19 +30,19 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     return `Error: ${param}`;
   }
 
-  function createTestADRModule(globalObject: any) {
+  function createTestADRModule(global: any) {
     return {
       name: "TestADRModule",
       doSomethingWithoutParameter(params: string) {
         const { callback }: NativeParameter<{}> = JSON.parse(params);
-        globalObject[callback]({ result: null, error: null, status_code: 200 });
+        global[callback]({ result: null, error: null, status_code: 200 });
       },
       doSomethingWithFalsyParameter(params: string) {
         const { callback, parameters }: NativeParameter<unknown> = JSON.parse(
           params
         );
 
-        globalObject[callback]({
+        global[callback]({
           result: parameters,
           error: null,
           status_code: 200
@@ -57,7 +57,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
           param2: string;
         }> = JSON.parse(params);
 
-        globalObject[callback]({
+        global[callback]({
           result: formatResult(param1, param2),
           error: null,
           status_code: 200
@@ -72,8 +72,8 @@ describe("Module wrappers should wrap platform modules correctly", () => {
         let count = 0;
 
         const intervalID = setInterval(() => {
-          if (globalObject[callback]) {
-            globalObject[callback]({
+          if (global[callback]) {
+            global[callback]({
               result: count,
               error: null,
               status_code: 200
@@ -92,7 +92,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
         }: NativeParameter<{ timeout: number }> = JSON.parse(params);
 
         setTimeout(() => {
-          globalObject[callback]({
+          global[callback]({
             result: { event: StreamEvent.STREAM_TERMINATED },
             status_code: 200
           });
@@ -104,7 +104,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
           callback
         }: NativeParameter<{ param: string }> = JSON.parse(params);
 
-        globalObject[callback]({
+        global[callback]({
           result: null,
           error: { message: formatError(param) },
           status_code: 404
@@ -113,13 +113,13 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     };
   }
 
-  function createTestIOSModule(globalObject: any) {
+  function createTestIOSModule(global: any) {
     return {
       name: "TestIOSModule",
       postMessage: ({ method, parameters, callback }: NativeParameter) => {
         switch (method) {
           case "doSomethingWithoutParameter":
-            globalObject[callback]({
+            global[callback]({
               result: null,
               error: null,
               status_code: 200
@@ -128,7 +128,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
             break;
 
           case "doSomethingWithFalsyParameter":
-            globalObject[callback]({
+            global[callback]({
               result: parameters,
               error: null,
               status_code: 200
@@ -137,7 +137,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
             break;
 
           case "getSomething":
-            globalObject[callback]({
+            global[callback]({
               result: formatResult(parameters.param1, parameters.param2),
               error: null,
               status_code: 200
@@ -149,8 +149,8 @@ describe("Module wrappers should wrap platform modules correctly", () => {
             let count = 0;
 
             const intervalID = setInterval(() => {
-              if (globalObject[callback]) {
-                globalObject[callback]({
+              if (global[callback]) {
+                global[callback]({
                   result: count,
                   error: null,
                   status_code: 200
@@ -166,7 +166,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
           case "observeGetSomethingWithTerminate":
             setTimeout(() => {
-              globalObject[callback]({
+              global[callback]({
                 result: { event: StreamEvent.STREAM_TERMINATED },
                 status_code: 200
               });
@@ -175,7 +175,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
             break;
 
           case "throwError":
-            globalObject[callback]({
+            global[callback]({
               result: null,
               error: { message: formatError(parameters.param) },
               status_code: 404
@@ -187,19 +187,23 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     };
   }
 
+  function getKeysWithValidCallbacks(global: any) {
+    return Object.keys(global).filter(key => !!global[key]);
+  }
+
   async function test_invokeMethodWithoutParameter_shouldWork(
-    globalObject: any,
+    global: any,
     moduleName: string
   ) {
     // Setup
     const wrappedName = wrapModuleName(moduleName);
 
     // When
-    const result1 = await globalObject[wrappedName].invoke(
+    const result1 = await global[wrappedName].invoke(
       "doSomethingWithoutParameter"
     );
 
-    const result2 = await globalObject[wrappedName].invoke(
+    const result2 = await global[wrappedName].invoke(
       "doSomethingWithoutParameter",
       null
     );
@@ -208,23 +212,23 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     // and the wrapped module as well.
     expectJs(result1).to.eql({ result: null, error: null, status_code: 200 });
     expectJs(result2).to.eql({ result: null, error: null, status_code: 200 });
-    expectJs(Object.keys(globalObject)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
   }
 
   async function test_invokeMethodWithFalsyParam_shouldWork(
-    globalObject: any,
+    global: any,
     moduleName: string
   ) {
     // Setup
     const wrappedName = wrapModuleName(moduleName);
 
     // When
-    const result1 = await globalObject[wrappedName].invoke(
+    const result1 = await global[wrappedName].invoke(
       "doSomethingWithFalsyParameter",
       0
     );
 
-    const result2 = await globalObject[wrappedName].invoke(
+    const result2 = await global[wrappedName].invoke(
       "doSomethingWithFalsyParameter",
       ""
     );
@@ -233,11 +237,11 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     // and the wrapped module as well.
     expectJs(result1).to.eql({ result: 0, error: null, status_code: 200 });
     expectJs(result2).to.eql({ result: "", error: null, status_code: 200 });
-    expectJs(Object.keys(globalObject)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
   }
 
   async function test_moduleMethod_withNormalReturn(
-    globalObject: any,
+    global: any,
     moduleName: string
   ) {
     // Setup
@@ -246,7 +250,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     const param2 = "2";
 
     // When
-    const result = await globalObject[wrappedName].invoke("getSomething", {
+    const result = await global[wrappedName].invoke("getSomething", {
       param1,
       param2
     });
@@ -259,19 +263,16 @@ describe("Module wrappers should wrap platform modules correctly", () => {
       status_code: 200
     });
 
-    expectJs(Object.keys(globalObject)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
   }
 
-  async function test_moduleMethod_withError(
-    globalObject: any,
-    moduleName: string
-  ) {
+  async function test_moduleMethod_withError(global: any, moduleName: string) {
     // Setup
     const wrappedName = wrapModuleName(moduleName);
     const param = "1";
 
     // When
-    const result = await globalObject[wrappedName].invoke("throwError", {
+    const result = await global[wrappedName].invoke("throwError", {
       param
     });
 
@@ -283,11 +284,11 @@ describe("Module wrappers should wrap platform modules correctly", () => {
       status_code: 404
     });
 
-    expectJs(Object.keys(globalObject)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
   }
 
   async function test_moduleMethod_withMultipleInvocations(
-    globalObject: any,
+    global: any,
     moduleName: string
   ) {
     // Setup
@@ -302,7 +303,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
     // When
     const results = await bluebird.map([...Array(rounds).keys()], v =>
-      globalObject[wrappedName].invoke("getSomething", {
+      global[wrappedName].invoke("getSomething", {
         param1: `${v}`,
         param2: `${v + 1}`
       })
@@ -311,11 +312,11 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
     expectJs(results).to.eql(expected);
-    expectJs(Object.keys(globalObject)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
   }
 
   function test_moduleMethod_withStream(
-    globalObject: any,
+    global: any,
     moduleName: string,
     done: Function
   ) {
@@ -327,7 +328,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     const streamedVals: CallbackResult<unknown>[] = [];
 
     // When
-    const subscription = globalObject[wrappedName]
+    const subscription = global[wrappedName]
       .invoke("observeGetSomething", { interval })
       .subscribe({
         next: (value: CallbackResult<unknown>) => streamedVals.push(value)
@@ -341,13 +342,13 @@ describe("Module wrappers should wrap platform modules correctly", () => {
       const length = (streamTimeout - (streamTimeout % interval)) / interval;
       expectJs(streamedVals).to.have.length(length);
       expectJs([...new Set(streamedVals)]).to.have.length(length);
-      expectJs(Object.keys(globalObject)).to.have.length(2);
+      expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
       done();
     }, timeout);
   }
 
   function test_moduleMethod_withTerminatingStream(
-    globalObject: any,
+    global: any,
     moduleName: string,
     done: Function
   ) {
@@ -359,7 +360,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     let completed = false;
 
     // When
-    const subscription = globalObject[wrappedName]
+    const subscription = global[wrappedName]
       .invoke("observeGetSomethingWithTerminate", { timeout: streamTimeout })
       .subscribe({
         next: (value: CallbackResult<unknown>) => streamedValues.push(value),
@@ -372,20 +373,20 @@ describe("Module wrappers should wrap platform modules correctly", () => {
       expectJs(streamedValues).to.have.length(0);
       expectJs(completed).to.be.ok();
       expectJs(subscription.isUnsubscribed()).to.be.ok();
-      expectJs(Object.keys(globalObject)).to.have.length(2);
+      expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
       done();
     }, timeout);
   }
 
   async function test_moduleMethodStream_shouldBeIdempotent(
-    globalObject: any,
+    global: any,
     moduleName: string
   ) {
     // Setup
     const wrappedName = wrapModuleName(moduleName);
     const iterations = 1000;
 
-    const stream = globalObject[wrappedName].invoke("observeGetSomething", {
+    const stream = global[wrappedName].invoke("observeGetSomething", {
       param: 1
     });
 
@@ -396,157 +397,157 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
-    expectJs(Object.keys(globalObject)).to.have.length(iterations + 2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(iterations + 2);
     subscriptions.forEach(subscription => subscription.unsubscribe());
-    expectJs(Object.keys(globalObject)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
   }
 
   // ################################ ANDROID ################################
 
   it("Should work for Android method without parameters", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    await test_invokeMethodWithoutParameter_shouldWork(globalObject, adr.name);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    await test_invokeMethodWithoutParameter_shouldWork(global, adr.name);
   });
 
   it("Should work for Android method with falsy parameters", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    await test_invokeMethodWithFalsyParam_shouldWork(globalObject, adr.name);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    await test_invokeMethodWithFalsyParam_shouldWork(global, adr.name);
   });
 
   it("Should wrap Android method with normal return correctly", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    await test_moduleMethod_withNormalReturn(globalObject, adr.name);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    await test_moduleMethod_withNormalReturn(global, adr.name);
   });
 
   it("Should wrap Android method with error return correctly", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    await test_moduleMethod_withError(globalObject, adr.name);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    await test_moduleMethod_withError(global, adr.name);
   });
 
   it("Should correctly call Android method multiple times", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    await test_moduleMethod_withMultipleInvocations(globalObject, adr.name);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    await test_moduleMethod_withMultipleInvocations(global, adr.name);
   });
 
   it("Should correctly stream values from Android method call", function(done) {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    test_moduleMethod_withStream(globalObject, adr.name, done);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    test_moduleMethod_withStream(global, adr.name, done);
   });
 
   it("Should terminate stream for Android method call", function(done) {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    test_moduleMethod_withTerminatingStream(globalObject, adr.name, done);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    test_moduleMethod_withTerminatingStream(global, adr.name, done);
   });
 
   it("Should be idempotent for Android streams", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = {};
-    const adr = createTestADRModule(globalObject);
-    globalObject[adr.name] = adr;
-    wrapModule(globalObject, adr.name);
-    await test_moduleMethodStream_shouldBeIdempotent(globalObject, adr.name);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    await test_moduleMethodStream_shouldBeIdempotent(global, adr.name);
   });
 
   // ################################## IOS ##################################
 
   it("Should work for iOS method without parameters", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    await test_invokeMethodWithoutParameter_shouldWork(globalObject, ios.name);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    await test_invokeMethodWithoutParameter_shouldWork(global, ios.name);
   });
 
   it("Should work for iOS method with falsy parameters", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    await test_invokeMethodWithFalsyParam_shouldWork(globalObject, ios.name);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    await test_invokeMethodWithFalsyParam_shouldWork(global, ios.name);
   });
 
   it("Should wrap iOS method with normal return correctly", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    await test_moduleMethod_withNormalReturn(globalObject, ios.name);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    await test_moduleMethod_withNormalReturn(global, ios.name);
   });
 
   it("Should wrap iOS method with error return correctly", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    await test_moduleMethod_withError(globalObject, ios.name);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    await test_moduleMethod_withError(global, ios.name);
   });
 
   it("Should correctly call iOS method multiple times", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    await test_moduleMethod_withMultipleInvocations(globalObject, ios.name);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    await test_moduleMethod_withMultipleInvocations(global, ios.name);
   });
 
   it("Should correctly stream values from iOS method call", function(done) {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    test_moduleMethod_withStream(globalObject, ios.name, done);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    test_moduleMethod_withStream(global, ios.name, done);
   });
 
   it("Should terminate stream for iOS method call", function(done) {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    test_moduleMethod_withTerminatingStream(globalObject, ios.name, done);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    test_moduleMethod_withTerminatingStream(global, ios.name, done);
   });
 
   it("Should be idempotent for iOS streams", async function() {
     this.timeout(testTimeout);
-    const globalObject: any = { webkit: { messageHandlers: {} } };
-    const ios = createTestIOSModule(globalObject);
-    globalObject.webkit.messageHandlers[ios.name] = ios;
-    wrapModule(globalObject, ios.name);
-    await test_moduleMethodStream_shouldBeIdempotent(globalObject, ios.name);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    await test_moduleMethodStream_shouldBeIdempotent(global, ios.name);
   });
 });
 
@@ -554,14 +555,14 @@ describe("Edge cases for wrapper", () => {
   it("Should throw error for Promise if no module found", async function() {
     // Setup
     this.timeout(testTimeout);
-    const globalObject: any = {};
+    const global: any = {};
     const moduleName = "NonExistentModule";
     const wrappedName = wrapModuleName(moduleName);
-    wrapModule(globalObject, moduleName);
+    wrapModule(global, moduleName);
 
     // When && Then
     try {
-      await globalObject[wrappedName].invoke("nonExistentMethod");
+      await global[wrappedName].invoke("nonExistentMethod");
       fail("Never should have come here");
     } catch (e) {
       expectJs(e).to.be.ok();
@@ -571,14 +572,14 @@ describe("Edge cases for wrapper", () => {
   it("Should throw error for stream if no module found", async function() {
     // Setup
     this.timeout(testTimeout);
-    const globalObject: any = {};
+    const global: any = {};
     const moduleName = "NonExistentModule";
     const wrappedName = wrapModuleName(moduleName);
-    wrapModule(globalObject, moduleName);
+    wrapModule(global, moduleName);
 
     // When && Then
     try {
-      globalObject[wrappedName]
+      global[wrappedName]
         .invoke("nonExistentMethod")
         .subscribe({ next: console.log, complete: console.log });
 

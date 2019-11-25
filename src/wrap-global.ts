@@ -5,26 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { wrapModuleName } from './utils';
-import { wrapGenericModule } from './wrap-generic';
+import { wrapModuleName } from "./utils";
+import { wrapGenericModule } from "./wrap-generic";
 
 /**
  * Get the module's mobile environment.
- * @param globalObject The global object - generally window.
+ * @param global The global object - generally window.
  * @param moduleName The name of the module being wrapped.
  */
 export function getModuleEnvironment(
-  globalObject: any,
+  global: any,
   moduleName: string
-): 'android' | 'ios' | undefined {
-  if (!!globalObject[moduleName]) {
-    return 'android';
+): "android" | "ios" | undefined {
+  if (!!global[moduleName]) {
+    return "android";
   } else if (
-    !!globalObject.webkit &&
-    !!globalObject.webkit.messageHandlers &&
-    !!globalObject.webkit.messageHandlers[moduleName]
+    !!global.webkit &&
+    !!global.webkit.messageHandlers &&
+    !!global.webkit.messageHandlers[moduleName]
   ) {
-    return 'ios';
+    return "ios";
   }
 
   return undefined;
@@ -32,22 +32,22 @@ export function getModuleEnvironment(
 
 /**
  * Wrap the appropriate module based on whether or not it's Android/iOS.
- * @param globalObject The global object - generally window.
+ * @param global The global object - generally window.
  * @param moduleName The name of the module being wrapped.
  */
-export function wrapModule(globalObject: any, moduleName: string) {
-  globalObject[wrapModuleName(moduleName)] = wrapGenericModule(
-    globalObject,
+export function wrapModule(global: any, moduleName: string) {
+  global[wrapModuleName(moduleName)] = wrapGenericModule(
+    global,
     moduleName,
     params => {
-      if (!!globalObject[moduleName]) {
-        globalObject[moduleName][params.method](JSON.stringify(params));
+      if (!!global[moduleName]) {
+        global[moduleName][params.method](JSON.stringify(params));
       } else if (
-        !!globalObject.webkit &&
-        !!globalObject.webkit.messageHandlers &&
-        !!globalObject.webkit.messageHandlers[moduleName]
+        !!global.webkit &&
+        !!global.webkit.messageHandlers &&
+        !!global.webkit.messageHandlers[moduleName]
       ) {
-        globalObject.webkit.messageHandlers[moduleName].postMessage(params);
+        global.webkit.messageHandlers[moduleName].postMessage(params);
       } else {
         throw new Error(
           `Unexpected method '${params.method}' for module '${moduleName}'`

@@ -77,7 +77,7 @@ export function getCallbackName({
  * one.
  */
 export function getFirstAvailableCallbackName(
-  globalObject: any,
+  global: any,
   {
     moduleName,
     funcName
@@ -93,7 +93,7 @@ export function getFirstAvailableCallbackName(
         moduleName,
         funcName,
         requestID: nextAvailableRequestID
-      })) in globalObject
+      })) in global
     ) {
       nextAvailableRequestID += 1;
     }

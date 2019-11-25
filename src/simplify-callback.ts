@@ -43,12 +43,12 @@ export type StreamEventResult = Readonly<{
 /**
  * Convert the callback to a stream to receive continual values.
  * @template T The emission value type.
- * @param globalObject The global object - generally window.
+ * @param global The global object - generally window.
  * @param param1 Parameters for stream creation.
  * @return A stream that can be subscribed to.
  */
 function streamCallback<T>(
-  globalObject: any,
+  global: any,
   { callbackNameFunc, funcToWrap }: Omit<Params, "funcNameToWrap">
 ): DataStream<T> {
   return createDataStream(
@@ -57,7 +57,7 @@ function streamCallback<T>(
       const callbackName = callbackNameFunc();
       let subscription: Subscription;
 
-      globalObject[callbackName] = (data: CallbackResult<T>) => {
+      global[callbackName] = (data: CallbackResult<T>) => {
         if (isType<CallbackResult<T>>(data, "status_code")) {
           if (isType<StreamEventResult>(data.result, "event")) {
             switch (data.result.event) {
@@ -85,7 +85,7 @@ function streamCallback<T>(
          * be assumed that the web client has unsubscribed from this stream, and
          * therefore the stream may be terminated on the mobile side.
          */
-        delete globalObject[callbackName];
+        global[callbackName] = undefined;
         !!handlers && !!handlers.complete && handlers.complete();
       });
 
@@ -97,13 +97,13 @@ function streamCallback<T>(
 /**
  * Handle the simplication of callbacks for both single asynchronous return
  * values and streams.
- * @param globalObject The global object - generally window.
+ * @param global The global object - generally window.
  * @param param1 Parameters for callback simplification.
  * @return Check the return types for private functions in this module.
  */
 export function simplifyCallback(
-  globalObject: any,
+  global: any,
   { funcNameToWrap, ...restParams }: Params
 ) {
-  return streamCallback(globalObject, restParams);
+  return streamCallback(global, restParams);
 }

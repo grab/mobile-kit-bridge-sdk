@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.0.1
+
+### Improvements
+
+- Instead of deleting callbacks from global object, set it to undefined to prevent concurrent native environments from mistakenly reusing callbacks.
+
 ## v2.0.0
 
 ### Breaking changes
