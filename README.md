@@ -11,9 +11,9 @@ SDK for mobile module bridge to offer unified method signatures for Android/iOS.
 For example:
 
 ```javascript
-const identifier = await window.WrappedLocaleKit.invoke('getLocaleIdentifier');
-await window.WrappedAnalyticsModule.invoke('track', { analyticsEvent: event })
-await window.WrappedMediaKit.invoke('playDRMContent', { contentURL, license })
+const identifier = await window.WrappedLocaleKit.invoke("getLocaleIdentifier");
+await window.WrappedAnalyticsModule.invoke("track", { analyticsEvent: event });
+await window.WrappedMediaKit.invoke("playDRMContent", { contentURL, license });
 ```
 
 All module methods will have `callback` as one of the parameters:
@@ -67,22 +67,22 @@ This callback style allows us to pass errors to the partner app that they can ha
 
 ## Value streaming
 
-All module methods whose parameters include a flag `isStream: true` are assumed to support streaming, e.g.:
+All module methods return streams, e.g.:
 
 ```javascript
-const subscription = window.WrappedMediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({
-  next: console.log,
-  complete: console.log,
-});
+/** Get stream of location updates. */
+const subscription = window.WrappedLocationModule.invoke(
+  "observeLocationChange"
+).subscribe({ next: console.log, complete: console.log });
 ```
 
 Calling these methods returns `DataStream` objects that can be subscribed to with `StreamHandlers` (i.e. `onValue`, `onComplete` etc.). Once `subscribe` is called, a `Subscription` object is created to control when streaming should be terminated.
 
-Note that `DataStream` always creates new streams whenever `subscribe` is called, so there is no need to worry about invoking it multiple times. The concept of `DataStream` is similar to that of an `Observable`, and it certainly is easy to bridge the two:
+Note that `DataStream` always creates new streams whenever `subscribe` is called, so there is no need to worry about invoking it multiple times. The concept of `DataStream` is similar to that of an `Observable`, and it is easy to bridge the two:
 
 ```javascript
 const playObservable = new Observable(sub => {
-  const subscription = window.WrappedMediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({ 
+  const subscription = window.WrappedMediaKit.invoke('observePlayDRMContent', { isStream: true, ... }).subscribe({
     next: data => sub.next(data),
     complete: () => sub.complete(),
   });
@@ -99,20 +99,22 @@ playObservable.pipe(filter(...), map(...)).subscribe(...);
 const { result, error, status_code } = await window.WrappedMediaKit.invoke('observePlayDRMContent', { isStream: true, ... });
 ```
 
+Please be aware that **Promises returned by bridged methods are non-eager**, so they will only be triggered on invocation of `then`, or after an `await` in an `async` function.
+
 ## Data format
 
 Callback results must be in the format prescribed below:
 
 ```javascript
-type CallbackResult = Readonly<{
+type CallbackResult<T = unknown> = Readonly<{
   /** The result of the operation. */
-  result: unknown;
+  result: T,
 
   /** The error object, if any. */
-  error: unknown;
+  error: unknown,
 
   /** The status code. */
-  status_code: number;
+  status_code: number
 }>;
 ```
 
