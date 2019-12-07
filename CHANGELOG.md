@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.1.0
+
+### Improvements
+
+- Ensure `null` is not passed to consumer, i.e. `result`, `error` and `status_code`, can be `undefined`, but never `null`.
+
 ## v2.0.1
 
 ### Improvements

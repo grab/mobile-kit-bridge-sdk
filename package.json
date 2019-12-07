@@ -1,6 +1,6 @@
 {
   "name": "@grabjs/mobile-kit-bridge-sdk",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "SDK for mobile kit bridge to offer unified method signatures for Android/iOS.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
