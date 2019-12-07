@@ -6,20 +6,13 @@
  */
 
 import { simplifyCallback } from "./simplify-callback";
-import {
-  DefaultParameters,
-  getFirstAvailableCallbackName,
-  NativeParameter
-} from "./utils";
+import { getFirstAvailableCallbackName, NativeParameter } from "./utils";
 
 /** Represents a wrapped generic module. */
 type WrappedModule = Readonly<{
   invoke: (
     method: string,
-    params:
-      | (Readonly<{ [K: string]: unknown }> & DefaultParameters)
-      | undefined
-      | null
+    params: Readonly<{ [K: string]: unknown }> | undefined | null
   ) => unknown;
 }>;
 

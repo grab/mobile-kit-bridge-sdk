@@ -12,10 +12,10 @@ import { describe, it } from "mocha";
 import { CallbackResult, StreamEvent } from "./index";
 import { createDataStream, createSubscription } from "./subscription";
 import {
-  NativeParameter,
-  wrapModuleName,
   getCallbackName,
-  getFirstAvailableCallbackName
+  getFirstAvailableCallbackName,
+  NativeParameter,
+  wrapModuleName
 } from "./utils";
 import { getModuleEnvironment, wrapModule } from "./wrap-global";
 
@@ -35,7 +35,12 @@ describe("Module wrappers should wrap platform modules correctly", () => {
       name: "TestADRModule",
       doSomethingWithoutParameter(params: string) {
         const { callback }: NativeParameter<{}> = JSON.parse(params);
-        global[callback]({ result: null, error: null, status_code: 200 });
+
+        global[callback]({
+          result: undefined,
+          error: undefined,
+          status_code: 200
+        });
       },
       doSomethingWithFalsyParameter(params: string) {
         const { callback, parameters }: NativeParameter<unknown> = JSON.parse(
@@ -44,6 +49,15 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
         global[callback]({
           result: parameters,
+          error: undefined,
+          status_code: 200
+        });
+      },
+      doSomethingAndGetNullResult(params: string) {
+        const { callback }: NativeParameter<unknown> = JSON.parse(params);
+
+        global[callback]({
+          result: null,
           error: null,
           status_code: 200
         });
@@ -59,7 +73,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
         global[callback]({
           result: formatResult(param1, param2),
-          error: null,
+          error: undefined,
           status_code: 200
         });
       },
@@ -75,7 +89,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
           if (global[callback]) {
             global[callback]({
               result: count,
-              error: null,
+              error: undefined,
               status_code: 200
             });
 
@@ -105,7 +119,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
         }: NativeParameter<{ param: string }> = JSON.parse(params);
 
         global[callback]({
-          result: null,
+          result: undefined,
           error: { message: formatError(param) },
           status_code: 404
         });
@@ -120,8 +134,8 @@ describe("Module wrappers should wrap platform modules correctly", () => {
         switch (method) {
           case "doSomethingWithoutParameter":
             global[callback]({
-              result: null,
-              error: null,
+              result: undefined,
+              error: undefined,
               status_code: 200
             });
 
@@ -130,6 +144,15 @@ describe("Module wrappers should wrap platform modules correctly", () => {
           case "doSomethingWithFalsyParameter":
             global[callback]({
               result: parameters,
+              error: undefined,
+              status_code: 200
+            });
+
+            break;
+
+          case "doSomethingAndGetNullResult":
+            global[callback]({
+              result: null,
               error: null,
               status_code: 200
             });
@@ -139,7 +162,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
           case "getSomething":
             global[callback]({
               result: formatResult(parameters.param1, parameters.param2),
-              error: null,
+              error: undefined,
               status_code: 200
             });
 
@@ -152,7 +175,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
               if (global[callback]) {
                 global[callback]({
                   result: count,
-                  error: null,
+                  error: undefined,
                   status_code: 200
                 });
 
@@ -176,7 +199,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
           case "throwError":
             global[callback]({
-              result: null,
+              result: undefined,
               error: { message: formatError(parameters.param) },
               status_code: 404
             });
@@ -188,7 +211,9 @@ describe("Module wrappers should wrap platform modules correctly", () => {
   }
 
   function getKeysWithValidCallbacks(global: any) {
-    return Object.keys(global).filter(key => !!global[key]);
+    return Object.keys(global).filter(
+      key => !!global[key] && key.toLowerCase().includes("callback")
+    );
   }
 
   async function test_invokeMethodWithoutParameter_shouldWork(
@@ -204,15 +229,24 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     );
 
     const result2 = await global[wrappedName].invoke(
-      "doSomethingWithoutParameter",
-      null
+      "doSomethingWithoutParameter"
     );
 
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
-    expectJs(result1).to.eql({ result: null, error: null, status_code: 200 });
-    expectJs(result2).to.eql({ result: null, error: null, status_code: 200 });
-    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+    expectJs(result1).to.eql({
+      result: undefined,
+      error: undefined,
+      status_code: 200
+    });
+
+    expectJs(result2).to.eql({
+      result: undefined,
+      error: undefined,
+      status_code: 200
+    });
+
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
   }
 
   async function test_invokeMethodWithFalsyParam_shouldWork(
@@ -235,9 +269,38 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
-    expectJs(result1).to.eql({ result: 0, error: null, status_code: 200 });
-    expectJs(result2).to.eql({ result: "", error: null, status_code: 200 });
-    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+    expectJs(result1).to.eql({ result: 0, error: undefined, status_code: 200 });
+
+    expectJs(result2).to.eql({
+      result: "",
+      error: undefined,
+      status_code: 200
+    });
+
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
+  }
+
+  async function test_invokeMethodAndGetNull_shouldGetUndefined(
+    global: any,
+    moduleName: string
+  ) {
+    // Setup
+    const wrappedName = wrapModuleName(moduleName);
+
+    // When
+    const result = await global[wrappedName].invoke(
+      "doSomethingAndGetNullResult"
+    );
+
+    // Then - make sure to check number of keys to include the original module
+    // and the wrapped module as well.
+    expectJs(result).to.eql({
+      result: undefined,
+      error: undefined,
+      status_code: 200
+    });
+
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
   }
 
   async function test_moduleMethod_withNormalReturn(
@@ -259,11 +322,11 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     // and the wrapped module as well.
     expectJs(result).to.eql({
       result: formatResult(param1, param2),
-      error: null,
+      error: undefined,
       status_code: 200
     });
 
-    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
   }
 
   async function test_moduleMethod_withError(global: any, moduleName: string) {
@@ -279,12 +342,12 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
     expectJs(result).to.eql({
-      result: null,
+      result: undefined,
       error: { message: formatError(param) },
       status_code: 404
     });
 
-    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
   }
 
   async function test_moduleMethod_withMultipleInvocations(
@@ -297,7 +360,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
     const expected = [...Array(rounds).keys()].map(v => ({
       result: formatResult(v, v + 1),
-      error: null,
+      error: undefined,
       status_code: 200
     }));
 
@@ -312,7 +375,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
     expectJs(results).to.eql(expected);
-    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
   }
 
   function test_moduleMethod_withStream(
@@ -342,7 +405,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
       const length = (streamTimeout - (streamTimeout % interval)) / interval;
       expectJs(streamedVals).to.have.length(length);
       expectJs([...new Set(streamedVals)]).to.have.length(length);
-      expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+      expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
       done();
     }, timeout);
   }
@@ -373,7 +436,7 @@ describe("Module wrappers should wrap platform modules correctly", () => {
       expectJs(streamedValues).to.have.length(0);
       expectJs(completed).to.be.ok();
       expectJs(subscription.isUnsubscribed()).to.be.ok();
-      expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+      expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
       done();
     }, timeout);
   }
@@ -397,9 +460,9 @@ describe("Module wrappers should wrap platform modules correctly", () => {
 
     // Then - make sure to check number of keys to include the original module
     // and the wrapped module as well.
-    expectJs(getKeysWithValidCallbacks(global)).to.have.length(iterations + 2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(iterations);
     subscriptions.forEach(subscription => subscription.unsubscribe());
-    expectJs(getKeysWithValidCallbacks(global)).to.have.length(2);
+    expectJs(getKeysWithValidCallbacks(global)).to.have.length(0);
   }
 
   // ################################ ANDROID ################################
@@ -420,6 +483,15 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     global[adr.name] = adr;
     wrapModule(global, adr.name);
     await test_invokeMethodWithFalsyParam_shouldWork(global, adr.name);
+  });
+
+  it("Should work for Android method with null results", async function() {
+    this.timeout(testTimeout);
+    const global: any = {};
+    const adr = createTestADRModule(global);
+    global[adr.name] = adr;
+    wrapModule(global, adr.name);
+    await test_invokeMethodAndGetNull_shouldGetUndefined(global, adr.name);
   });
 
   it("Should wrap Android method with normal return correctly", async function() {
@@ -494,6 +566,15 @@ describe("Module wrappers should wrap platform modules correctly", () => {
     global.webkit.messageHandlers[ios.name] = ios;
     wrapModule(global, ios.name);
     await test_invokeMethodWithFalsyParam_shouldWork(global, ios.name);
+  });
+
+  it("Should work for iOS method with null results", async function() {
+    this.timeout(testTimeout);
+    const global: any = { webkit: { messageHandlers: {} } };
+    const ios = createTestIOSModule(global);
+    global.webkit.messageHandlers[ios.name] = ios;
+    wrapModule(global, ios.name);
+    await test_invokeMethodAndGetNull_shouldGetUndefined(global, ios.name);
   });
 
   it("Should wrap iOS method with normal return correctly", async function() {

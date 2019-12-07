@@ -58,16 +58,22 @@ function streamCallback<T>(
       let subscription: Subscription;
 
       global[callbackName] = (data: CallbackResult<T>) => {
-        if (isType<CallbackResult<T>>(data, "status_code")) {
-          if (isType<StreamEventResult>(data.result, "event")) {
-            switch (data.result.event) {
-              case StreamEvent.STREAM_TERMINATED:
-                subscription.unsubscribe();
-                break;
-            }
-          } else {
-            !!handlers && !!handlers.next && handlers.next(data);
+        if (isType<StreamEventResult>(data.result, "event")) {
+          switch (data.result.event) {
+            case StreamEvent.STREAM_TERMINATED:
+              subscription.unsubscribe();
+              break;
           }
+        } else {
+          const { result, error, status_code } = data;
+
+          !!handlers &&
+            !!handlers.next &&
+            handlers.next({
+              result: result === null ? undefined : result,
+              error: error === null ? undefined : error,
+              status_code: status_code === null ? undefined : status_code
+            });
         }
       };
 

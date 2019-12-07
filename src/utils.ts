@@ -8,9 +8,6 @@
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type StringKeys<T> = Extract<keyof T, string>;
 
-/** Default parameters that must be present in all calls. */
-export type DefaultParameters = Readonly<{ isStream: unknown }>;
-
 /** Method parameters for native methods. */
 export type NativeParameter<Params = { [K: string]: unknown }> = Readonly<{
   /** The module name. */
@@ -28,13 +25,13 @@ export type NativeParameter<Params = { [K: string]: unknown }> = Readonly<{
 
 export type CallbackResult<T> = Readonly<{
   /** The result of the operation. */
-  result: T;
+  result?: T;
 
   /** The error object, if any. */
-  error: unknown;
+  error?: unknown;
 
   /** The status code. */
-  status_code: number;
+  status_code?: number;
 }>;
 
 /**
