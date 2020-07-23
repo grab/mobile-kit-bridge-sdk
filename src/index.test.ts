@@ -693,18 +693,38 @@ describe("Utility functions should work correctly", () => {
     });
 
     // When
-    const { result, error, status_code } = await dataStream;
+    const { result, error, status_code } = await dataStream.then(data => data);
+    const invalidData = await dataStream.then();
 
     // Then
     await new Promise(resolve => {
       setTimeout(() => {
         expectJs(result).to.eql(1);
-        expectJs(error).to.not.be.ok();
+        expectJs(error).not.to.be.ok();
         expectJs(status_code).to.eql(200);
-        expectJs(currentTick).to.eql(1);
+        expectJs(currentTick).to.eql(2);
+        expectJs(invalidData).not.to.be.ok();
         resolve(undefined);
       }, 500);
     });
+  });
+
+  it("Data stream should support Promise-style error handling", async function() {
+    // Setup
+    const error = new Error("expected")
+
+    const dataStream = createDataStream(() => {
+      throw error;
+    });
+
+    // When
+    try {
+      await dataStream.then(data => data);
+      fail('Never should have come here')
+    } catch (e) {
+      // Then
+      expectJs(e).to.eql(error);
+    }
   });
 
   it("Should get module environment correctly", async () => {

@@ -69,14 +69,19 @@ export function createDataStream<T>(
   return {
     subscribe,
     then: (onFulfilled, onRejected) => {
-      return new Promise(() => {
+      return new Promise((resolve, reject) => {
         try {
           let subscription: Subscription | null = null;
           let didFinish = false;
 
           subscription = subscribe({
             next: data => {
-              !!onFulfilled && onFulfilled(data);
+              if (onFulfilled == null) {
+                resolve(undefined);
+              } else {
+                resolve(onFulfilled(data))
+              }
+
               !!subscription && subscription.unsubscribe();
               didFinish = true;
             }
@@ -84,7 +89,11 @@ export function createDataStream<T>(
 
           if (didFinish) !!subscription && subscription.unsubscribe();
         } catch (e) {
-          !!onRejected && onRejected(e);
+          if (onRejected == null) {
+            reject(e);
+          } else {
+            reject(onRejected(e));
+          }
         }
       });
     }
