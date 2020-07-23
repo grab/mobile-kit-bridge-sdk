@@ -92,7 +92,7 @@ export function createDataStream<T>(
           if (onRejected == null) {
             reject(e);
           } else {
-            reject(onRejected(e));
+            resolve(onRejected(e));
           }
         }
       });

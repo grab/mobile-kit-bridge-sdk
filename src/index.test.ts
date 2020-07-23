@@ -717,7 +717,7 @@ describe("Utility functions should work correctly", () => {
       throw error;
     });
 
-    // When
+    // When: 1
     try {
       await dataStream.then(data => data);
       fail('Never should have come here')
@@ -725,6 +725,10 @@ describe("Utility functions should work correctly", () => {
       // Then
       expectJs(e).to.eql(error);
     }
+
+    // When: 2
+    const handledResult = await dataStream.then(undefined, () => 1);
+    expectJs(handledResult).to.eql(1);
   });
 
   it("Should get module environment correctly", async () => {
