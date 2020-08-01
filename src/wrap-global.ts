@@ -40,7 +40,10 @@ export function wrapModule(global: any, moduleName: string) {
     global,
     moduleName,
     params => {
-      if (!!global[moduleName]) {
+      if (
+        !!global[moduleName] && 
+        global[moduleName][params.method] instanceof Function
+      ) {
         global[moduleName][params.method](JSON.stringify(params));
       } else if (
         !!global.webkit &&
