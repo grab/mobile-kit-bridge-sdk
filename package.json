@@ -22,7 +22,7 @@
     "@types/mocha": "^5.2.6",
     "bluebird": "^3.5.3",
     "expect.js": "^0.3.1",
-    "mocha": "^6.1.2",
+    "mocha": "^10.2.0",
     "mocha-typescript": "^1.1.17",
     "prettier": "^1.19.1",
     "prettier-tslint": "^0.4.2",
